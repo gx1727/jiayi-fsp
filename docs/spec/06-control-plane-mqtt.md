@@ -22,11 +22,8 @@
 - Server：订阅 client/+/+，发布 server/{client_id}/...
 - ACL 强制约束见 21-acl-and-auth
 
-## 6.4 状态机映射
+## 6.4 与状态机的关系
 
-- upload_start → INIT → NEGOTIATING
-- upload_accept → NEGOTIATING → TRANSFERRING
-- missing_chunks → 维持 TRANSFERRING
-- upload_complete → COMPLETED
-- session_abort → ABORTED
-- resume_session → 维持 TRANSFERRING
+- 控制消息与状态机的唯一合法映射以 10-state-machine 为准
+- 本章节不重复列出具体状态转移，避免规范漂移
+- 具体 Topic 语义与方向详见 22-topic-spec

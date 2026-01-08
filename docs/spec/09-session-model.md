@@ -4,11 +4,7 @@
 
 ## 9.1 会话生命周期
 
-```
-INIT → NEGOTIATING → TRANSFERRING → COMPLETED | ABORTED
-```
-
-可选扩展：TRANSFERRING → VERIFY → COMMIT → COMPLETED
+- 生命周期定义与合法状态转移以 10-state-machine 为准
 
 ## 9.2 会话参数
 
