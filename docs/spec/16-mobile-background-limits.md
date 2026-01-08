@@ -1,5 +1,14 @@
-# 16 MOBILE BACKGROUND LIMITS
+# 16 移动端后台限制
 
-> Status: Draft
+明确移动端平台在后台传输上的约束与实现建议。
 
-TODO
+## 16.1 Android
+
+- 长时间同步使用 Foreground Service
+- 向用户明确展示同步状态
+
+## 16.2 iOS
+
+- 数据传输仅在前台进行
+- 进入后台视为会话中断
+- 返回前台需 resume_session

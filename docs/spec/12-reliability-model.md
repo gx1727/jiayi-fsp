@@ -1,5 +1,25 @@
-# 12 RELIABILITY MODEL
+# 12 可靠性模型（Reliability）
 
-> Status: Draft
+jiayi-fsp 的可靠性来源于控制面裁决与接收端随机写盘的组合，而非逐包确认。
 
-TODO
+## 12.1 可靠性来源
+
+- 控制面周期统计缺失并下发 missing_chunks
+- 接收端乱序写盘并标记 bitmap
+- 包级完整性使用 crc32 校验
+- 文件级完整性使用内容 hash 校验
+
+## 12.2 丢包与重传
+
+- UDP 层不触发即时重传
+- 接收端聚合缺失，通过 missing_chunks 下发
+- 发送端仅重传指定 chunk，优先级高于新数据
+
+## 12.3 中断与恢复
+
+- 会话中断不回滚已写入数据
+- 恢复后加载位图，计算缺失并补传
+
+## 12.4 完成与提交
+
+- bitmap 全真 → 校验文件 hash → 原子重命名临时文件 → upload_complete

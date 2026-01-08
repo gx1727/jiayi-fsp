@@ -1,5 +1,6 @@
-# 04 NON GOALS
+# 04 非目标（Non-Goals）
 
-> Status: Draft
-
-TODO
+- 公网穿透与互联网规模传输
+- 复杂拥塞控制与逐包 ACK
+- 多租户不可信网络场景
+- 移动端后台长时间无 UI 传输
