@@ -12,7 +12,7 @@ const OpenSourceInfo = () => {
           </p>
         </div>
         <div className="mt-6 md:mt-0 flex space-x-4">
-          <a href="#" className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50 transition-colors">
+          <a href="https://github.com/gx1727/jiayi-fsp" className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50 transition-colors">
             <Github className="w-5 h-5 mr-2" />
             GitHub Repo
           </a>

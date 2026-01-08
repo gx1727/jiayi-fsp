@@ -38,7 +38,7 @@ const Footer = () => {
             <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">社区</h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <a href="#" className="text-base text-gray-500 hover:text-gray-900 flex items-center">
+                <a href="https://github.com/gx1727/jiayi-fsp" className="text-base text-gray-500 hover:text-gray-900 flex items-center">
                   <Github className="w-4 h-4 mr-2" />
                   GitHub
                 </a>
