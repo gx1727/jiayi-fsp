@@ -1,4 +1,5 @@
 # JIAYI-FSP
+（[中文文档](README.zh-CN.md)）
 
 JIAYI File Sync Protocol (JIAYI-FSP) is a hybrid file synchronization protocol
 designed for trusted local networks.
