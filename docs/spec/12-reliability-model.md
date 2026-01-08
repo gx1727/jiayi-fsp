@@ -1,0 +1,5 @@
+# 12 RELIABILITY MODEL
+
+> Status: Draft
+
+TODO

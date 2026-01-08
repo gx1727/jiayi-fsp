@@ -1,0 +1,5 @@
+# 17 MEMORY AND DISK MODEL
+
+> Status: Draft
+
+TODO
