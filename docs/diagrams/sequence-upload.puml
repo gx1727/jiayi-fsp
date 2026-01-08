@@ -1,0 +1,7 @@
+@startuml
+Client -> Server : upload_start
+Server -> Client : upload_accept
+Client -> Server : UDP chunks
+Server -> Client : missing_chunks
+Server -> Client : upload_complete
+@enduml

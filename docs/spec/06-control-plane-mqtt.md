@@ -1,0 +1,5 @@
+# 06 CONTROL PLANE MQTT
+
+> Status: Draft
+
+TODO
