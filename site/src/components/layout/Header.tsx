@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Home, Layers, FileText, Monitor, Code } from 'lucide-react';
+import { Menu, X, Home, Layers, FileText, Monitor, Code, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Header = () => {
@@ -13,6 +13,7 @@ const Header = () => {
     { name: '技术规范', href: '/specification', icon: FileText },
     { name: '应用场景', href: '/scenarios', icon: Monitor },
     { name: '开发者资源', href: '/developers', icon: Code },
+    { name: '家忆', href: 'https://www.16491649.xyz', icon: Heart },
   ];
 
   const isActive = (path: string) => {
