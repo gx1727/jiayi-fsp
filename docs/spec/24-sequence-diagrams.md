@@ -1,97 +1,35 @@
 # 24 端到端时序（MQTT + UDP）
 
-本章描述一次完整文件传输的端到端流程，上传与下载仅数据方向相反，控制面一致。
+## 时序流程
 
-状态机与合法状态转移以 10-state-machine 为准。
+### 会话建立
 
-## 24.1 参与方
+upload_start → upload_accept（含会话参数）
 
-```
-Client App        MQTT Broker           Server
-    |                  |                  |
-```
+### UDP 探测
 
-## 24.2 会话建立（控制面）
+UDP_HELLO → UDP_HELLO_ACK → udp_ready
 
-```
-Client               MQTT               Server
-  |-- upload_start --->|------------------->|
-  |<-- upload_accept --|<-------------------|
-  |   (session_id, chunk_size, window)
-```
+### 数据传输
 
-会话参数在此阶段确定；后续 UDP 包必须绑定该 session_id。
+Client 连续发送 UDP chunk；Server 乱序随机写盘
 
-## 24.3 UDP 可用性探测
+### 缺失统计与重传
 
-```
-Client                                   Server
-  |---- UDP_HELLO ---------------------->|
-  |<--- UDP_HELLO_ACK -------------------|
+Server 下发 missing_chunks；Client 按指令重传
 
-Client               MQTT               Server
-  |<-- udp_ready -----|<------------------|
-```
+### 校验与提交
 
-探测失败进入 TCP fallback。
+Server 校验 hash、原子重命名、upload_complete
 
-## 24.4 数据传输（UDP）
+### 中断与恢复
 
-```
-Client                                   Server
-  |-- UDP chunk #0 ---------------------->|
-  |-- UDP chunk #1 ---------------------->|
-  |      ...                               |
-  |-- UDP chunk #N ---------------------->|
-```
+resume_session → missing_chunks
 
-UDP 包可能乱序、丢失、重复；Server 立即按 chunk_id 随机写盘。
+### 下载对称
 
-## 24.5 缺失统计与重传（控制面裁决）
+控制面一致，仅 UDP 方向互换
 
-```
-Client               MQTT               Server
-  |<-- missing_chunks -|<------------------|
-       [3, 7, 9]
+## 状态机
 
-Client                                   Server
-  |-- UDP chunk #3 ---------------------->|
-  |-- UDP chunk #7 ---------------------->|
-  |-- UDP chunk #9 ---------------------->|
-```
-
-UDP 层不直接触发重传；由控制面统一处理。
-
-## 24.6 校验与提交
-
-```
-Server
-  - 校验文件 hash
-  - 原子重命名临时文件
-  - 标记 session completed
-
-Server               MQTT               Client
-  |-- upload_complete |------------------->|
-```
-
-## 24.7 中断与恢复
-
-```
-(网络中断 / App 退后台)
---- 时间间隔 ---
-
-Client               MQTT               Server
-  |-- resume_session ->|------------------->|
-  |<-- missing_chunks -|<-------------------|
-```
-
-已写入 chunk 保留，仅补传缺失部分。
-
-## 24.8 下载流程对称性
-
-```
-Upload   : Client 发送 UDP → Server 接收
-Download : Server 发送 UDP → Client 接收
-```
-
-控制面时序一致，仅 UDP 数据方向互换。
+状态机与合法转移以 10-state-machine 为准

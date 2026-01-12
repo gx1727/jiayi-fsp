@@ -12,15 +12,15 @@ const DeviceRoles = () => {
         <ul className="mt-6 space-y-3 text-left w-full">
           <li className="flex items-start">
             <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-primary-500 mt-2 mr-2"></span>
-            <span className="text-gray-600">长期在线，作为数据存储中心</span>
+            <span className="text-gray-600">最终裁决者，控制面与可靠性裁决的唯一通道</span>
           </li>
           <li className="flex items-start">
             <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-primary-500 mt-2 mr-2"></span>
-            <span className="text-gray-600">负责文件最终校验与落盘</span>
+            <span className="text-gray-600">负责文件最终校验与原子提交</span>
           </li>
           <li className="flex items-start">
             <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-primary-500 mt-2 mr-2"></span>
-            <span className="text-gray-600">拥有同步状态的最终裁决权</span>
+            <span className="text-gray-600">乱序随机写盘，维护接收位图</span>
           </li>
         </ul>
       </div>
@@ -33,15 +33,15 @@ const DeviceRoles = () => {
         <ul className="mt-6 space-y-3 text-left w-full">
           <li className="flex items-start">
             <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-secondary-500 mt-2 mr-2"></span>
-            <span className="text-gray-600">主动发起同步请求</span>
+            <span className="text-gray-600">发起与发送者，主动发起所有请求</span>
           </li>
           <li className="flex items-start">
             <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-secondary-500 mt-2 mr-2"></span>
-            <span className="text-gray-600">负责数据分片 (Chunking) 与发送</span>
+            <span className="text-gray-600">数据分片（Chunking）、UDP 发送与重传</span>
           </li>
           <li className="flex items-start">
             <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-secondary-500 mt-2 mr-2"></span>
-            <span className="text-gray-600">适应移动端网络切换与电量限制</span>
+            <span className="text-gray-600">适应移动端网络切换与电量限制，支持 resume_session 恢复</span>
           </li>
         </ul>
       </div>

@@ -18,8 +18,8 @@ const cases = [
     icon: HardDrive,
   },
   {
-    title: '媒体库回流 (New)',
-    desc: '在手机上查看 PC 端存储的历史照片，支持按需高速下载原图。',
+    title: '下载（Server → Client）',
+    desc: 'Client 主动发起，Server 向 Client 推送数据，控制面与可靠性机制与上传一致。',
     icon: Download,
   },
 ];

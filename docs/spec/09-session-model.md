@@ -1,34 +1,42 @@
 # 09 会话模型（Session Model）
 
-定义会话的生命周期、参数与持久化内容。
+## 生命周期
 
-## 9.1 会话生命周期
+生命周期与合法状态转移以 10-state-machine 为准。
 
-- 生命周期定义与合法状态转移以 10-state-machine 为准
+## 会话参数
 
-## 9.2 会话参数
+### 核心字段
 
-- session_id（uint64）
-- client_id（string）
-- file_id_hash（uint64）
-- file_size（uint64）
-- chunk_size（uint32）
-- chunk_count（uint64）
-- window（uint32）
+- session_id
+- client_id
+- file_id_hash
+- file_size
+- chunk_size
+- chunk_count
+- window
 
-## 9.3 持久化内容（Server）
+### 扩展字段
 
-- 临时文件（包含已写入数据）
-- bitmap（接收进度）
-- session 元数据
+- mtime（文件修改时间）
+- udp_port
+- tcp_port
+- temp_file_path
+- last_activity
+- state
 
-## 9.4 创建规则
+## 持久化
 
-- file_id 正在同步 → 返回现有 session
-- file 已存在且完整 → 直接返回完成
-- 否则创建新会话（INIT）
+- 临时文件
+- bitmap
+- 元数据
 
-## 9.5 超时与回收
+## 创建规则
 
-- last_activity 超过阈值 → ABORTED
-- 清理包含临时文件、位图与元数据
+- 同文件正在同步 → 返回现有会话
+- 已存在完整文件 → 直接完成
+- 否则新建
+
+## 超时与回收
+
+长时间无活动 → ABORTED 并清理临时文件/位图/元数据

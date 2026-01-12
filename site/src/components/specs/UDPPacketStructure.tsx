@@ -151,11 +151,15 @@ const UDPPacketStructure = () => {
                 <div className="space-y-2 text-sm text-gray-700">
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                        <span>UDP 包固定大小: <span className="font-mono font-bold text-gray-900">1200 Byte</span></span>
+                        <span>chunk_size: 由协商决定（建议 <span className="font-mono font-bold text-gray-900">1200</span> 字节）</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                        <span>Payload 最大字节数 = <span className="font-mono">1200</span> (MTU) - <span className="font-mono">28</span> (固定字段) = <span className="font-mono font-bold text-green-700">1172 Byte</span></span>
+                        <span>payload_len ≤ chunk_size</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                        <span>总包大小 = <span className="font-mono">24</span> (固定字段) + <span className="font-mono">4</span> (CRC32) + <span className="font-mono">payload_len</span></span>
                     </div>
                 </div>
             </div>

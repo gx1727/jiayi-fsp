@@ -1,38 +1,49 @@
 # 07 数据面（UDP / TCP Fallback）
 
-数据面承载高吞吐文件 chunk 传输。UDP 为主、TCP 为降级；控制面始终拥有最终裁决权。
-
-## 7.1 UDP 原则
+## UDP 原则
 
 - 无连接、无逐包 ACK、允许丢包与乱序
-- 固定 chunk 语义，payload_len ≤ chunk_size
-- 包级完整性使用 crc32 校验
+- payload_len ≤ chunk_size
+- crc32 包级校验
 
-## 7.2 发送端行为（Client）
+## 发送端
 
-- 按 window 连续发送 chunk
-- 发送间隔建议 2–5ms（可调）
-- 不做拥塞控制，不等待 ACK
-- 重传仅针对 missing_chunks 指定的 chunk
+- 按 window 连续发送
+- 间隔 2–5ms
+- 不做拥塞控制
+- 仅对 missing_chunks 重传
 
-## 7.3 接收端行为（Server）
+## 接收端
 
-- 校验 session_id / file_id_hash / crc32
-- 随机写盘（offset = chunk_id * chunk_size）
-- 标记 bitmap 接收进度
+- 校验头与 crc32
+- 随机写盘
+- 标记位图
 - 不直接推进状态机
 
-## 7.4 UDP 可用性探测
+## UDP 可用性探测
 
-```
-Client → Server : UDP_HELLO
-Server → Client : UDP_HELLO_ACK
-Server → Client : udp_ready (MQTT)
-```
+### 交互流程
 
-三步成功方视为 UDP 可用。
+1. Client 发送 UDP_PROBE
+2. Server 返回 UDP_PROBE_ACK
+3. Server 通过 MQTT 发送 udp_ready
 
-## 7.5 TCP 降级
+### PROBE 数据包
 
-- 启用条件：UDP 探测失败、丢包异常比例高、明确网络错误
-- 行为约束：单 session、保持 chunk 与 bitmap 机制、不追求极限性能
+- flags.bit3=1
+- payload 为 session_id 的 8 字节小端编码
+
+### PROBE_ACK 数据包
+
+- flags.bit3=1
+- payload 为 session_id + 1 字节状态码（0=成功，1=失败）
+
+### 超时
+
+- Client 等待 PROBE_ACK 超时（建议 2s）则判定 UDP 不可用
+- 回退到 TCP
+
+## TCP 降级
+
+- UDP 不可用或异常时启用
+- 保持 chunk 与 bitmap 语义

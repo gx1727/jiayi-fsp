@@ -1,107 +1,45 @@
 # 26 最小参考实现（Reference MVP）
 
-本文用于指导实现一个可跑通、可验证协议正确性的最小实现（MVP），不追求性能与完整功能。
+## 目标
 
-## 26.1 目标
+- 单文件上传；控制面 MQTT；数据面 UDP；随机写盘与恢复
 
-- 单文件上传（Client → Server）
-- 控制面：MQTT
-- 数据面：UDP
-- 支持随机写盘与中断恢复
+## 状态
 
-## 26.2 Session 状态机
+- INIT→NEGOTIATING→TRANSFERRING→COMPLETED|ABORTED（仅由 MQTT 推进）
 
-状态：
-```
-INIT → NEGOTIATING → TRANSFERRING → COMPLETED | ABORTED
-```
+## Chunk
 
-约束：
-- 只有 MQTT 消息可以推进状态
-- UDP 收包不能改变 Session 状态
+- chunk_size=1200；chunk_count=ceil(file_size/chunk_size)
 
-## 26.3 Chunk 规则
+## UDP 接收
 
-```
-chunk_size = 1200 bytes
-chunk_count = ceil(file_size / chunk_size)
-chunk_id ∈ [0, chunk_count)
-```
+- verify_crc→match_session→pwrite(offset=chunk_id*chunk_size)→bitmap.mark
 
-## 26.4 UDP 接收处理
+## 位图
 
-伪代码：
-```
-on_udp_packet(pkt):
-    if !verify_crc(pkt): return
-    if !match_session(pkt.session_id): return
-    offset = pkt.chunk_id * chunk_size
-    pwrite(file_fd, pkt.payload, offset)
-    bitmap.mark(pkt.chunk_id)
-```
+- 周期刷盘
 
-## 26.5 Bitmap
+## 缺失计算与下发
 
-- BitSet 表示是否接收
-- 周期刷盘（如每 1s 或每 100 chunks）
+- 遍历位图→missing[]→MQTT 下发
 
-## 26.6 missing_chunks
+## 重传
 
-```
-missing = []
-for i in 0..chunk_count:
-    if bitmap[i] == false:
-        missing.append(i)
-```
+- Client 接收 missing_chunks 并重传
 
-MQTT 下发：
-```
-{
-  "session_id": "...",
-  "missing_chunks": [3,7,9]
-}
-```
+## 恢复
 
-## 26.7 重传（Client 侧）
+- Server 持久化临时文件/位图/元数据；恢复时加载与下发缺失
 
-```
-on_mqtt(missing_chunks):
-    for chunk_id in missing_chunks:
-        resend_udp(chunk_id)
-```
+## 完成
 
-## 26.8 中断与恢复
+- bitmap 全真→校验 hash→rename→upload_complete
 
-Server 持久化：临时文件、bitmap、session 元数据
+## 验收清单
 
-恢复：
-```
-on_mqtt(resume_session):
-    load bitmap
-    calc missing_chunks
-    send missing_chunks
-```
+- 乱序可完成；中断可继续；内存不随文件增长；位图丢失可恢复；无 UDP ACK
 
-## 26.9 完成与提交
+## 下一阶段
 
-```
-if bitmap.all_true():
-    verify_file_hash()
-    rename(temp_file, final_file)
-    mqtt(upload_complete)
-```
-
-## 26.10 验收清单
-
-- UDP 包乱序仍可完成
-- 中断后可继续
-- 内存占用与文件大小无关
-- bitmap 丢失可恢复
-- 不存在 UDP ACK
-
-## 26.11 下一阶段建议
-
-- 下载（Server → Client）
-- TCP fallback
-- 并发 session
-- 加密与认证
+- 下载、TCP fallback、并发 session、加密与认证

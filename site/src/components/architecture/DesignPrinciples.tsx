@@ -1,31 +1,36 @@
 import React from 'react';
-import { Target, Server, AlertTriangle, WifiOff } from 'lucide-react';
+import { Target, Server, Layers, Zap, Database, Wifi } from 'lucide-react';
 
 const principles = [
   {
     title: '控制面与数据面解耦',
-    description: '通过物理分离控制信令与数据传输，使得控制逻辑更加清晰，数据传输更加高效。',
-    icon: Target,
+    description: 'MQTT 负责控制信令，UDP 负责数据传输。控制面拥有最终裁决权，数据面仅负责搬运与落盘。',
+    icon: Layers,
   },
   {
-    title: 'Server 端为最终一致性来源',
-    description: 'Server (PC) 拥有最终裁决权，避免了复杂的分布式一致性问题。',
+    title: 'Server 为最终裁决者',
+    description: 'Server 是最终一致性来源，所有状态推进由 MQTT 控制消息触发，UDP 数据面不得改变会话状态。',
     icon: Server,
   },
   {
-    title: 'Client 主动拉取 (Pull Model)',
-    description: '无论是上传还是下载，均由 Client 发起控制和连接，适应 NAT 环境，保障安全。',
+    title: '仅 MQTT 推进状态机',
+    description: '状态机仅由控制面推进，数据面不得直接改变会话状态。',
     icon: Target,
   },
   {
-    title: '失败优先设计 (Failure-first)',
-    description: '假设网络总是不可靠的，协议内置了强大的重传和恢复机制。',
-    icon: AlertTriangle,
+    title: '控制慢而可靠，数据快而可丢',
+    description: '状态推进、裁决、重传在 MQTT；高吞吐在 UDP/TCP。',
+    icon: Zap,
+  },
+  {
+    title: '内存与文件大小解耦',
+    description: '使用随机写盘与位图，内存占用仅与 chunk_size 成正比，不随文件大小增长。',
+    icon: Database,
   },
   {
     title: '局域网优先',
-    description: '不强制公网穿透，专注于家庭局域网内的高性能传输，保护用户隐私。',
-    icon: WifiOff,
+    description: '专注于家庭局域网内的高性能传输，不提供公网穿透，保护用户隐私。',
+    icon: Wifi,
   },
 ];
 

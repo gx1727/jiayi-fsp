@@ -23,7 +23,7 @@ const Hero = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
             </span>
-            JIAYI-FSP 1.0 现已发布
+            JIAYI-FSP v0.1 (实验性)
           </span>
           
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 mb-8">

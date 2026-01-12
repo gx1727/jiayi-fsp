@@ -11,12 +11,12 @@ sequenceDiagram
     Note over Client, Server: 1. 会话建立 (控制面)
     Client->>MQTT: upload_start
     MQTT->>Server: upload_start
-    Server->>MQTT: upload_accept (session_id)
-    MQTT->>Client: upload_accept (session_id)
+    Server->>MQTT: upload_accept (session_id, chunk_count, window, udp_port)
+    MQTT->>Client: upload_accept
 
     Note over Client, Server: 2. UDP 可用性探测
-    Client->>Server: UDP_HELLO (UDP)
-    Server-->>Client: UDP_HELLO_ACK (UDP)
+    Client->>Server: UDP_PROBE (UDP)
+    Server-->>Client: UDP_PROBE_ACK (UDP)
     Server->>MQTT: udp_ready
     MQTT->>Client: udp_ready
 
@@ -34,7 +34,7 @@ sequenceDiagram
     Client->>Server: UDP chunk #9 (Resend)
 
     Note over Client, Server: 5. 校验与提交
-    Server->>Server: Verify Hash & Commit
+    Server->>Server: Verify Hash & Atomic Rename
     Server->>MQTT: upload_complete
     MQTT->>Client: upload_complete
   `;
@@ -52,16 +52,26 @@ sequenceDiagram
               <h4 className="font-bold text-blue-800 mb-2">核心流程解析</h4>
               <ul className="list-disc list-inside text-sm text-blue-700 space-y-1">
                   <li><strong>控制优先：</strong> 所有状态变更（开始、重传、完成）均由 MQTT 驱动。</li>
-                  <li><strong>UDP 探测：</strong> 传输前必须确认 UDP 通路，否则降级 TCP。</li>
+                  <li><strong>UDP 探测：</strong> Client 发送 UDP_PROBE，Server 返回 UDP_PROBE_ACK 并通过 MQTT 发送 udp_ready。</li>
+                  <li><strong>超时处理：</strong> Client 等待 PROBE_ACK 超时（建议 2s）则判定 UDP 不可用，回退到 TCP。</li>
                   <li><strong>被动重传：</strong> Client 不猜测丢包，完全依赖 Server 的 missing_chunks 指令。</li>
               </ul>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
               <h4 className="font-bold text-purple-800 mb-2">异常处理设计</h4>
               <ul className="list-disc list-inside text-sm text-purple-700 space-y-1">
-                  <li><strong>断点续传：</strong> 任意时刻中断，再次连接时仅需重传 missing 列表。</li>
+                  <li><strong>断点续传：</strong> 任意时刻中断，再次连接时通过 resume_session 恢复，仅需重传 missing 列表。</li>
                   <li><strong>乱序容忍：</strong> UDP 包到达顺序不影响写入，Chunk ID 决定落盘位置。</li>
+                  <li><strong>TCP 降级：</strong> UDP 不可用或异常时启用 TCP，保持 chunk 与 bitmap 语义。</li>
               </ul>
+          </div>
+      </div>
+
+      <div className="mt-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+          <h4 className="font-bold text-green-800 mb-2">UDP 探测包格式</h4>
+          <div className="text-sm text-green-700 space-y-2">
+              <p><strong>UDP_PROBE:</strong> flags.bit3=1，payload 为 session_id 的 8 字节小端编码</p>
+              <p><strong>UDP_PROBE_ACK:</strong> flags.bit3=1，payload 为 session_id + 1 字节状态码（0=成功，1=失败）</p>
           </div>
       </div>
     </div>

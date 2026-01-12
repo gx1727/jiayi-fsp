@@ -19,7 +19,7 @@ const SpecificationPage = () => {
             技术规范
           </h1>
           <p className="mt-4 text-xl text-gray-500 max-w-2xl mx-auto">
-            JIAYI-FSP 1.0 详细协议定义。
+            JIAYI-FSP v0.1 详细协议定义。
           </p>
         </motion.div>
 
