@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+.gradient-bg {
+  background-image: radial-gradient(1200px 600px at 10% 10%, rgba(30,64,175,0.12) 0, rgba(124,58,237,0.12) 35%, transparent 70%),
+    radial-gradient(800px 400px at 90% 20%, rgba(124,58,237,0.12) 0, rgba(30,64,175,0.12) 40%, transparent 70%);
+}
+
+.glass {
+  backdrop-filter: saturate(180%) blur(8px);
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.animated-bg {
+  position: relative;
+}
+
+.animated-bg::before,
+.animated-bg::after {
+  content: "";
+  position: fixed;
+  inset: -20% -20% -20% -20%;
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(40px);
+  opacity: 0.25;
+  will-change: transform, opacity;
+}
+
+.animated-bg::before {
+  background: radial-gradient(600px 600px at 15% 30%, rgba(30, 64, 175, 0.18) 0, transparent 60%);
+  animation: driftA 36s ease-in-out infinite;
+}
+
+.animated-bg::after {
+  background: radial-gradient(700px 700px at 85% 20%, rgba(124, 58, 237, 0.18) 0, transparent 60%);
+  animation: driftB 44s ease-in-out infinite;
+}
+
+@keyframes driftA {
+  0% {
+    transform: translate3d(-20px, 0, 0) scale(1);
+    opacity: 0.22;
+  }
+  50% {
+    transform: translate3d(20px, 18px, 0) scale(1.06);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate3d(-20px, 0, 0) scale(1);
+    opacity: 0.22;
+  }
+}
+
+@keyframes driftB {
+  0% {
+    transform: translate3d(10px, -10px, 0) scale(1);
+    opacity: 0.24;
+  }
+  50% {
+    transform: translate3d(-10px, 20px, 0) scale(1.05);
+    opacity: 0.32;
+  }
+  100% {
+    transform: translate3d(10px, -10px, 0) scale(1);
+    opacity: 0.24;
+  }
+}
