@@ -2,68 +2,137 @@ import React from 'react';
 import CodeBlock from '../ui/CodeBlock';
 
 const MessageDefinitions = () => {
-  const uploadStartTopic = `jiayi/fsp/client/{client_id}/upload_start`;
+  const loginTopic = `/jiayi/fsp/client/{client_id}/login`;
+  const loginPayload = `{
+  "type": "login",
+  "device_id": "string",
+  "username": "string|null"
+}`;
+
+  const loginAckTopic = `/jiayi/fsp/server/{client_id}/login_ack`;
+  const loginAckPayload = `{
+  "type": "login_ack",
+  "result": "success|fail",
+  "message": "string|null",
+  "user": {
+    "user_id": "i64",
+    "username": "string",
+    "device_id": "string",
+    "status": "string",
+    "last_login_time": "i64",
+    "created_time": "i64"
+  }
+}`;
+
+  const statusTopic = `/jiayi/fsp/{role}/{client_id}/status`;
+  const statusPayload = `{
+  "type": "status",
+  "device_id": "string",
+  "status": "online|offline"
+}`;
+
+  const uploadStartTopic = `/jiayi/fsp/client/{client_id}/upload_start`;
   const uploadStartPayload = `{
-  "session_id": "uint64",
-  "file_id": "string",
+  "type": "upload_start",
+  "session_id": "string|null",
+  "file_hash": "string",
   "file_name": "string",
-  "size": "uint64",
-  "mtime": "uint64",
-  "chunk_size": "uint32"
+  "size": "u64",
+  "mtime": "u64",
+  "chunk_size": "u32"
 }`;
 
-  const uploadAcceptTopic = `jiayi/fsp/server/{client_id}/upload_accept`;
+  const uploadAcceptTopic = `/jiayi/fsp/server/{client_id}/upload_accept`;
   const uploadAcceptPayload = `{
-  "session_id": "uint64",
-  "chunk_count": "uint32",
-  "window": "uint32",
-  "udp_port": "uint16"
+  "type": "upload_accept",
+  "file_hash": "string",
+  "session_id": "string",
+  "chunk_count": "u32",
+  "window": "u32",
+  "udp_port": "u16",
+  "chunk_size": "u32"
 }`;
 
-  const udpReadyTopic = `jiayi/fsp/server/{client_id}/udp_ready`;
+  const udpReadyTopic = `/jiayi/fsp/server/{client_id}/udp_ready`;
   const udpReadyPayload = `{
-  "session_id": "uint64"
+  "type": "udp_ready",
+  "session_id": "string"
 }`;
 
-  const missingChunksTopic = `jiayi/fsp/server/{client_id}/missing_chunks`;
+  const missingChunksTopic = `/jiayi/fsp/{role}/{client_id}/missing_chunks`;
   const missingChunksPayload = `{
-  "session_id": "uint64",
-  "missing_chunks": ["uint32", "uint32"]
+  "type": "missing_chunks",
+  "session_id": "string",
+  "chunks": ["u32"]
 }`;
 
-  const resumeTopic = `jiayi/fsp/client/{client_id}/resume_session`;
+  const progressUpdateTopic = `/jiayi/fsp/{role}/{client_id}/progress_update`;
+  const progressUpdatePayload = `{
+  "type": "progress_update",
+  "session_id": "string",
+  "received": "u64",
+  "total": "u64"
+}`;
+
+  const sessionPauseTopic = `/jiayi/fsp/{role}/{client_id}/session_pause`;
+  const sessionPausePayload = `{
+  "type": "session_pause",
+  "session_id": "string"
+}`;
+
+  const resumeTopic = `/jiayi/fsp/client/{client_id}/resume_session`;
   const resumePayload = `{
-  "session_id": "uint64"
+  "type": "resume_session",
+  "session_id": "string"
 }`;
 
-  const uploadCompleteTopic = `jiayi/fsp/server/{client_id}/upload_complete`;
+  const resumeAckTopic = `/jiayi/fsp/server/{client_id}/resume_ack`;
+  const resumeAckPayload = `{
+  "type": "resume_ack",
+  "session_id": "string",
+  "next_chunk_id": "u32",
+  "udp_port": "u16"
+}`;
+
+  const uploadCompleteTopic = `/jiayi/fsp/server/{client_id}/upload_complete`;
   const uploadCompletePayload = `{
-  "session_id": "uint64",
-  "status": "ok"
+  "type": "upload_complete",
+  "session_id": "string",
+  "result": "string",
+  "file_hash": "u64|null"
 }`;
 
-  const sessionAbortTopic = `jiayi/fsp/server/{client_id}/session_abort`;
+  const sessionAbortTopic = `/jiayi/fsp/{role}/{client_id}/session_abort`;
   const sessionAbortPayload = `{
-  "session_id": "uint64",
+  "type": "session_abort",
+  "session_id": "string",
   "reason": "string"
 }`;
 
-  const downloadStartTopic = `jiayi/fsp/client/{client_id}/download_start`;
+  const downloadStartTopic = `/jiayi/fsp/client/{client_id}/download_start`;
   const downloadStartPayload = `{
-  "file_id": "string"
+  "type": "download_start",
+  "session_id": "string",
+  "file_hash": "string",
+  "file_name": "string",
+  "size": "u64",
+  "chunk_size": "u32"
 }`;
 
-  const downloadAcceptTopic = `jiayi/fsp/server/{client_id}/download_accept`;
+  const downloadAcceptTopic = `/jiayi/fsp/server/{client_id}/download_accept`;
   const downloadAcceptPayload = `{
-  "session_id": "uint64",
-  "chunk_count": "uint32",
-  "window": "uint32",
-  "tcp_port": "uint16"
+  "type": "download_accept",
+  "session_id": "string",
+  "chunk_count": "u32",
+  "window": "u32",
+  "tcp_port": "u16"
 }`;
 
-  const downloadCompleteTopic = `jiayi/fsp/server/{client_id}/download_complete`;
+  const downloadCompleteTopic = `/jiayi/fsp/{role}/{client_id}/download_complete`;
   const downloadCompletePayload = `{
-  "session_id": "uint64"
+  "type": "download_complete",
+  "session_id": "string",
+  "result": "string"
 }`;
 
   return (
@@ -71,16 +140,34 @@ const MessageDefinitions = () => {
       <h2 className="text-2xl font-bold text-gray-900">MQTT Topic 与载荷示例</h2>
 
       <div>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">认证类 (Authentication)</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <h4 className="font-semibold text-gray-700">Login</h4>
+            <p className="text-sm text-gray-500">Client → Server：设备登录认证</p>
+            <CodeBlock code={loginTopic} language="text" />
+            <CodeBlock code={loginPayload} language="json" />
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-semibold text-gray-700">Login Ack</h4>
+            <p className="text-sm text-gray-500">Server → Client：登录响应</p>
+            <CodeBlock code={loginAckTopic} language="text" />
+            <CodeBlock code={loginAckPayload} language="json" />
+          </div>
+        </div>
+      </div>
+
+      <div>
         <h3 className="text-lg font-bold text-gray-900 mb-4">上传（Upload）</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-700">1. Upload Start</h4>
+            <h4 className="font-semibold text-gray-700">Upload Start</h4>
             <p className="text-sm text-gray-500">Client → Server：发起上传会话</p>
             <CodeBlock code={uploadStartTopic} language="text" />
             <CodeBlock code={uploadStartPayload} language="json" />
           </div>
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-700">2. Upload Accept</h4>
+            <h4 className="font-semibold text-gray-700">Upload Accept</h4>
             <p className="text-sm text-gray-500">Server → Client：接受上传请求</p>
             <CodeBlock code={uploadAcceptTopic} language="text" />
             <CodeBlock code={uploadAcceptPayload} language="json" />
@@ -89,49 +176,67 @@ const MessageDefinitions = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4">传输控制</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">传输控制 (Transfer Control)</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-700">3. UDP Ready</h4>
+            <h4 className="font-semibold text-gray-700">UDP Ready</h4>
             <p className="text-sm text-gray-500">Server → Client：UDP 可用性确认</p>
             <CodeBlock code={udpReadyTopic} language="text" />
             <CodeBlock code={udpReadyPayload} language="json" />
           </div>
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-700">4. Missing Chunks</h4>
-            <p className="text-sm text-gray-500">Server → Client：缺失数据块列表</p>
+            <h4 className="font-semibold text-gray-700">Missing Chunks</h4>
+            <p className="text-sm text-gray-500">双向：缺失数据块列表</p>
             <CodeBlock code={missingChunksTopic} language="text" />
             <CodeBlock code={missingChunksPayload} language="json" />
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-semibold text-gray-700">Progress Update</h4>
+            <p className="text-sm text-gray-500">双向：传输进度更新</p>
+            <CodeBlock code={progressUpdateTopic} language="text" />
+            <CodeBlock code={progressUpdatePayload} language="json" />
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-semibold text-gray-700">Session Pause</h4>
+            <p className="text-sm text-gray-500">双向：暂停会话</p>
+            <CodeBlock code={sessionPauseTopic} language="text" />
+            <CodeBlock code={sessionPausePayload} language="json" />
           </div>
         </div>
       </div>
 
       <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4">会话完成与终止</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">会话管理 (Session Management)</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-700">5. Upload Complete</h4>
+            <h4 className="font-semibold text-gray-700">Resume Session</h4>
+            <p className="text-sm text-gray-500">Client → Server：请求恢复中断的会话</p>
+            <CodeBlock code={resumeTopic} language="text" />
+            <CodeBlock code={resumePayload} language="json" />
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-semibold text-gray-700">Resume Ack</h4>
+            <p className="text-sm text-gray-500">Server → Client：恢复确认</p>
+            <CodeBlock code={resumeAckTopic} language="text" />
+            <CodeBlock code={resumeAckPayload} language="json" />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">会话完成与终止 (Completion & Termination)</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <h4 className="font-semibold text-gray-700">Upload Complete</h4>
             <p className="text-sm text-gray-500">Server → Client：上传完成通知</p>
             <CodeBlock code={uploadCompleteTopic} language="text" />
             <CodeBlock code={uploadCompletePayload} language="json" />
           </div>
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-700">6. Session Abort</h4>
-            <p className="text-sm text-gray-500">Server → Client：会话终止</p>
+            <h4 className="font-semibold text-gray-700">Session Abort</h4>
+            <p className="text-sm text-gray-500">双向：会话终止</p>
             <CodeBlock code={sessionAbortTopic} language="text" />
             <CodeBlock code={sessionAbortPayload} language="json" />
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4">会话恢复</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <h4 className="font-semibold text-gray-700">7. Resume Session</h4>
-            <p className="text-sm text-gray-500">Client → Server：请求恢复中断的会话</p>
-            <CodeBlock code={resumeTopic} language="text" />
-            <CodeBlock code={resumePayload} language="json" />
           </div>
         </div>
       </div>
@@ -140,20 +245,20 @@ const MessageDefinitions = () => {
         <h3 className="text-lg font-bold text-gray-900 mb-4">下载（Download）</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-700">8. Download Start</h4>
+            <h4 className="font-semibold text-gray-700">Download Start</h4>
             <p className="text-sm text-gray-500">Client → Server：请求下载文件</p>
             <CodeBlock code={downloadStartTopic} language="text" />
             <CodeBlock code={downloadStartPayload} language="json" />
           </div>
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-700">9. Download Accept</h4>
+            <h4 className="font-semibold text-gray-700">Download Accept</h4>
             <p className="text-sm text-gray-500">Server → Client：接受下载请求</p>
             <CodeBlock code={downloadAcceptTopic} language="text" />
             <CodeBlock code={downloadAcceptPayload} language="json" />
           </div>
           <div className="space-y-2">
-            <h4 className="font-semibold text-gray-700">10. Download Complete</h4>
-            <p className="text-sm text-gray-500">Server → Client：下载完成通知（可选）</p>
+            <h4 className="font-semibold text-gray-700">Download Complete</h4>
+            <p className="text-sm text-gray-500">双向：下载完成通知</p>
             <CodeBlock code={downloadCompleteTopic} language="text" />
             <CodeBlock code={downloadCompletePayload} language="json" />
           </div>
@@ -163,10 +268,12 @@ const MessageDefinitions = () => {
       <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
         <p className="font-bold text-yellow-800 mb-2">重要说明</p>
         <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
-          <li>所有消息必须携带 <code className="bg-yellow-100 px-1 rounded">session_id</code> 字段</li>
+          <li>所有消息必须携带 <code className="bg-yellow-100 px-1 rounded">type</code> 字段标识消息类型</li>
+          <li><code className="bg-yellow-100 px-1 rounded">session_id</code> 为 u32 类型，在 JSON 中以字符串形式传输，由 Server 生成</li>
+          <li>Client 发送 upload_start 时 session_id 可为空</li>
           <li>未识别的消息类型必须忽略，保持幂等性</li>
-          <li>Client 仅发布 <code className="bg-yellow-100 px-1 rounded">client/{"{client_id}"}/#</code>，订阅 <code className="bg-yellow-100 px-1 rounded">server/{"{client_id}"}/#</code></li>
-          <li>Server 订阅 <code className="bg-yellow-100 px-1 rounded">client/+</code>，发布 <code className="bg-yellow-100 px-1 rounded">server/{"{client_id}"}/#</code></li>
+          <li>Client 仅发布 <code className="bg-yellow-100 px-1 rounded">{'/jiayi/fsp/client/{client_id}/#'}</code>，订阅 <code className="bg-yellow-100 px-1 rounded">{'/jiayi/fsp/server/{client_id}/#'}</code></li>
+          <li>Server 订阅 <code className="bg-yellow-100 px-1 rounded">/jiayi/fsp/client/+</code>，发布 <code className="bg-yellow-100 px-1 rounded">{'/jiayi/fsp/server/{client_id}/#'}</code></li>
         </ul>
       </div>
     </div>

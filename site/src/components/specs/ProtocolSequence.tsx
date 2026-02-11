@@ -70,7 +70,7 @@ sequenceDiagram
       <div className="mt-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
           <h4 className="font-bold text-green-800 mb-2">UDP 探测包格式</h4>
           <div className="text-sm text-green-700 space-y-2">
-              <p><strong>UDP_PROBE:</strong> flags.bit3=1，payload 为 session_id 的 8 字节小端编码</p>
+              <p><strong>UDP_PROBE:</strong> flags.bit3=1，payload 为 session_id 的 4 字节小端编码</p>
               <p><strong>UDP_PROBE_ACK:</strong> flags.bit3=1，payload 为 session_id + 1 字节状态码（0=成功，1=失败）</p>
           </div>
       </div>

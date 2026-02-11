@@ -2,18 +2,23 @@
 
 ## 基础术语
 
-- `session_id`（uint64）：会话唯一标识
-- `file_id_hash`（uint64）：文件哈希标识
-- `chunk_size`（bytes）：数据块大小
-- `chunk_id`（uint32）：数据块标识
-- `payload_len`（uint16）：载荷长度
-- `flags`（uint16）：标志位
+- `session_id`（u32）：会话唯一标识
+- `file_hash`（string）：文件哈希
+- `file_name`（string）：文件名
+- `size`（u64）：文件大小（字节）
+- `mtime`（u64）：文件修改时间戳
+- `chunk_size`（u32）：数据块大小（字节）
+- `chunk_id`（u32）：数据块标识
+- `payload_len`（u16）：载荷长度
+- `flags`（u16）：标志位
 
 ## 状态与控制
 
 - `bitmap`：接收进度位图
-- `window`（uint32）：滑动窗口大小
-- `client_id`（string）：客户端唯一标识
-- `missing_chunks`（uint32[]）：缺失数据块列表
+- `window`（u32）：滑动窗口大小
+- `client_id`（device_id，string）：客户端设备 ID
+- `missing_chunks`（Vec<u32>）：缺失数据块列表
 - `udp_ready`：UDP 就绪通知
 - `resume_session`：会话恢复请求
+- `progress_update`：传输进度更新
+- `session_pause`：会话暂停请求

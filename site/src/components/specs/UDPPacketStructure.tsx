@@ -17,7 +17,7 @@ const UDPPacketStructure = () => {
 
                     <div className="font-mono text-sm">
                         <div className="p-4 bg-blue-50 text-blue-800 text-center border-b border-gray-200">
-                            session_id (32 bit)
+                            session_id (32 bit, u32)
                         </div>
                         <div className="p-4 bg-green-50 text-blue-800 text-center border-b border-gray-200">
                             chunk_id (32 bit)
@@ -54,7 +54,7 @@ const UDPPacketStructure = () => {
                                     <td className="px-4 py-2 font-mono text-blue-600">session_id</td>
                                     <td className="px-4 py-2 text-gray-500">32</td>
                                     <td className="px-4 py-2 text-gray-500">0</td>
-                                    <td className="px-4 py-2 text-gray-700">会话唯一标识，与 MQTT Session 一致</td>
+                                    <td className="px-4 py-2 text-gray-700">会话唯一标识 (u32)，与 MQTT Session 一致</td>
                                 </tr>
                                 <tr>
                                     <td className="px-4 py-2 font-mono text-green-600">chunk_id</td>
@@ -126,10 +126,9 @@ const UDPPacketStructure = () => {
                     <div>
                         <h3 className="text-lg font-bold text-gray-900 mb-2">错误处理规范 (Error Handling)</h3>
                         <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                            <li>所有多字节字段必须使用 <strong>网络字节序 (Big Endian)</strong></li>
+                            <li>所有多字节字段必须使用 <strong>网络字节序 (小端 Little Endian)</strong></li>
                             <li>CRC32 校验失败的包 <strong>必须丢弃 (MUST discard)</strong></li>
                             <li>Session ID 不匹配的包 <strong>必须丢弃 (MUST discard)</strong></li>
-                            <li>File ID Hash 不匹配的包 <strong>必须丢弃并记录 (Discard & Log)</strong></li>
                             <li>Payload Length 非法的包 <strong>必须丢弃 (MUST discard)</strong></li>
                         </ul>
                     </div>
