@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, UploadCloud, Images, Wifi, CheckCircle2, AlertTriangle, CloudOff, Smartphone, HardDrive } from "lucide-react";
+import { ShieldCheck, UploadCloud, Images, Wifi, CheckCircle2, AlertTriangle, CloudOff, Smartphone, HardDrive, Menu, X, Download, Apple, Monitor } from "lucide-react";
 
 const Section = ({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) => (
   <section id={id} className="max-w-6xl mx-auto px-6 py-16">
@@ -8,7 +9,21 @@ const Section = ({ id, title, children }: { id?: string; title: string; children
   </section>
 );
 
+const NAV_LINKS = [
+  { href: "#intro", label: "介绍" },
+  { href: "#why", label: "为什么" },
+  { href: "#solution", label: "方案" },
+  { href: "#steps", label: "使用步骤" },
+  { href: "/app-guide", label: "使用手册" },
+  { href: "#compare", label: "对比" },
+  { href: "#audience", label: "适用人群" },
+  { href: "#security", label: "隐私" },
+  { href: "https://gx1727.github.io/jiayi-fsp/", label: "JIAYI-FSP" },
+];
+
 export function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen gradient-bg animated-bg">
       <header className="sticky top-0 z-40">
@@ -19,17 +34,27 @@ export function App() {
               <span className="text-xl font-semibold text-gray-900">家忆 · JIAYI</span>
             </div>
             <nav className="hidden md:flex items-center gap-6 text-gray-700">
-              <a href="#intro">介绍</a>
-              <a href="#why">为什么</a>
-              <a href="#solution">方案</a>
-              <a href="#steps">使用步骤</a>
-              <a href="#compare">对比</a>
-              <a href="#audience">适用人群</a>
-              <a href="#security">隐私</a>
-              <a href="https://gx1727.github.io/jiayi-fsp/">JIAYI-FSP</a>
+              {NAV_LINKS.map((link) => (
+                <a key={link.href} href={link.href}>{link.label}</a>
+              ))}
               <a href="#cta" className="px-3 py-1.5 rounded bg-gradient-to-r from-brand-blue to-brand-purple text-white">下载</a>
             </nav>
+            <button
+              className="md:hidden p-2 text-gray-700"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+            >
+              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
+          {menuOpen && (
+            <nav className="md:hidden px-6 pb-4 flex flex-col gap-3 text-gray-700 border-t border-gray-200">
+              {NAV_LINKS.map((link) => (
+                <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="py-1">{link.label}</a>
+              ))}
+              <a href="#cta" onClick={() => setMenuOpen(false)} className="py-2 text-center rounded bg-gradient-to-r from-brand-blue to-brand-purple text-white">下载</a>
+            </nav>
+          )}
         </div>
       </header>
 
@@ -76,8 +101,8 @@ export function App() {
               </div>
               <div className="p-6 rounded-xl bg-white shadow-soft border border-gray-100">
                 <UploadCloud className="text-brand-purple" />
-                <h3 className="mt-3 font-semibold text-gray-900">自动同步</h3>
-                <p className="mt-2 text-gray-700">手机连上家里 Wi‑Fi 即自动备份，无需手动操作。</p>
+                <h3 className="mt-3 font-semibold text-gray-900">快速同步</h3>
+                <p className="mt-2 text-gray-700">手机连上家里 Wi‑Fi ,简单手动操作，即快速备份。</p>
               </div>
               <div className="p-6 rounded-xl bg-white shadow-soft border border-gray-100">
                 <Images className="text-brand-blue" />
@@ -90,7 +115,7 @@ export function App() {
 
         <Section id="intro" title="一句话介绍">
           <p className="text-gray-800 text-lg">
-            家忆（JIAYI）是一款运行在家庭局域网内的照片同步系统。手机连上家里的 Wi‑Fi，照片就会自动备份到家里的电脑，不经过云端，不对外传输，只属于你和你的家人。
+            家忆（JIAYI）是一款运行在家庭局域网内的照片同步系统。手机连上家里的 Wi‑Fi，照片就会快速备份到家里的电脑，不经过云端，不对外传输，只属于你和你的家人。
           </p>
         </Section>
 
@@ -171,8 +196,8 @@ export function App() {
             </div>
             <div className="p-6 rounded-xl bg-white shadow-soft border border-gray-100">
               <UploadCloud className="text-brand-purple" />
-              <h3 className="mt-3 font-semibold text-gray-900">自动同步</h3>
-              <p className="mt-2 text-gray-700">新拍的照片会自动同步到家忆服务器，后台完成，无需操心。</p>
+              <h3 className="mt-3 font-semibold text-gray-900">快速同步</h3>
+              <p className="mt-2 text-gray-700">新拍的照片快速同步到家忆服务器，后台完成，无需操心。</p>
             </div>
             <div className="p-6 rounded-xl bg-white shadow-soft border border-gray-100">
               <Images className="text-brand-blue" />
@@ -194,7 +219,7 @@ export function App() {
             </li>
             <li className="p-6 rounded-xl bg-white shadow-soft border border-gray-100">
               <CheckCircle2 className="text-brand-blue" />
-              <p className="mt-2">手机连上家庭 Wi‑Fi，照片自动同步</p>
+              <p className="mt-2">手机连上家庭 Wi‑Fi，照片快速同步</p>
             </li>
           </ol>
           <p className="mt-4 text-gray-700">不需要复杂设置，也不需要注册账号。</p>
@@ -263,14 +288,86 @@ export function App() {
           <p className="mt-4 text-gray-900 font-medium">照片的安全，由你自己决定。</p>
         </Section>
 
-        <Section id="cta" title="开始使用家忆">
-          <div className="flex flex-wrap gap-4">
-            <a className="px-6 py-3 rounded-lg bg-gradient-to-r from-brand-blue to-brand-purple text-white shadow-soft" href="#">
-              下载家忆
-            </a>
-            <a className="px-6 py-3 rounded-lg border border-gray-300 text-gray-800" href="#">
-              查看安装说明
-            </a>
+        <Section id="cta" title="下载家忆">
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="p-6 rounded-2xl bg-white shadow-soft border border-gray-100">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-brand-blue/15 to-brand-purple/15 flex items-center justify-center">
+                  <Smartphone className="h-5 w-5 text-brand-blue" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">客户端</h3>
+              </div>
+              <p className="text-gray-600 mb-6">手机端 APP，用于拍照、管理和同步照片到家庭服务器。</p>
+              <div className="space-y-3">
+                <a
+                  href="https://github.com/gx1727/jiayi-fsp/releases/download/v0.1.0/app-release.apk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-brand-blue to-brand-purple text-white shadow-soft hover:opacity-90 transition-opacity"
+                >
+                  <div className="flex items-center gap-3">
+                    <Download className="h-5 w-5" />
+                    <div>
+                      <div className="font-medium">Android</div>
+                      <div className="text-xs opacity-80">下载 APK 安装包</div>
+                    </div>
+                  </div>
+                </a>
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-100 text-gray-400 border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <Apple className="h-5 w-5" />
+                    <div>
+                      <div className="font-medium">iOS</div>
+                      <div className="text-xs">开发中…</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-white shadow-soft border border-gray-100">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-brand-blue/15 to-brand-purple/15 flex items-center justify-center">
+                  <Monitor className="h-5 w-5 text-brand-purple" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">服务端</h3>
+              </div>
+              <p className="text-gray-600 mb-6">运行在家庭电脑上的后台服务，接收并管理所有同步的照片。</p>
+              <div className="space-y-3">
+                <a
+                  href="https://github.com/gx1727/jiayi-fsp/releases/download/v0.1.0/JIAYI_0.1.0_x64-setup.exe"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-brand-blue to-brand-purple text-white shadow-soft hover:opacity-90 transition-opacity"
+                >
+                  <div className="flex items-center gap-3">
+                    <Download className="h-5 w-5" />
+                    <div>
+                      <div className="font-medium">Windows</div>
+                      <div className="text-xs opacity-80">下载安装包</div>
+                    </div>
+                  </div>
+                </a>
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-100 text-gray-400 border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <Apple className="h-5 w-5" />
+                    <div>
+                      <div className="font-medium">macOS</div>
+                      <div className="text-xs">开发中…</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-100 text-gray-400 border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <Monitor className="h-5 w-5" />
+                    <div>
+                      <div className="font-medium">Linux</div>
+                      <div className="text-xs">开发中…</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <p className="mt-6 text-gray-700">把家人的照片，安心地留在家里。</p>
         </Section>
