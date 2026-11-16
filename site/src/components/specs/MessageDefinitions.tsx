@@ -154,6 +154,12 @@ const MessageDefinitions = () => {
             <CodeBlock code={loginAckTopic} language="text" />
             <CodeBlock code={loginAckPayload} language="json" />
           </div>
+          <div className="space-y-2">
+            <h4 className="font-semibold text-gray-700">Status</h4>
+            <p className="text-sm text-gray-500">双向：设备在线状态报告</p>
+            <CodeBlock code={statusTopic} language="text" />
+            <CodeBlock code={statusPayload} language="json" />
+          </div>
         </div>
       </div>
 

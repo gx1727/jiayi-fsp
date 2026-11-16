@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import mermaid from 'mermaid';
 
 // Initialize mermaid
@@ -34,11 +34,10 @@ const Mermaid: React.FC<MermaidProps> = ({ chart }) => {
         const { svg } = await mermaid.render(id, chart);
         setSvgContent(svg);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Mermaid render error:', err);
-        // Don't show the error in UI to keep it clean, just log it. 
-        // Or show a fallback. For now, let's show a user-friendly message.
-        setError(err.message || 'Failed to render diagram');
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message || 'Failed to render diagram');
       }
     };
 
