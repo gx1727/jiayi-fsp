@@ -9,8 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "check": "tsc -b --noEmit",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "predeploy": "npm run build && npm run copy:spec",
+    "deploy": "gh-pages -d dist",
+    "copy:spec": "node scripts/copy-spec.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

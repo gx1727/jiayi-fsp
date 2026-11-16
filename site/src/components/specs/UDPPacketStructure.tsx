@@ -130,6 +130,18 @@ const UDPPacketStructure = () => {
                             <li>CRC32 校验失败的包 <strong>必须丢弃 (MUST discard)</strong></li>
                             <li>Session ID 不匹配的包 <strong>必须丢弃 (MUST discard)</strong></li>
                             <li>Payload Length 非法的包 <strong>必须丢弃 (MUST discard)</strong></li>
+                            <li>chunk_id ≥ chunk_count 的包 <strong>必须丢弃 (MUST discard)</strong></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">CRC32 变体 (CRC Variant)</h3>
+                        <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                            <li>必须使用 <strong>CRC-32/ISO-HDLC</strong>（zlib crc32）</li>
+                            <li>多项式 <span className="font-mono">0x04C11DB7</span>（反射 <span className="font-mono">0xEDB88320</span>）</li>
+                            <li>初值与末尾异或均为 <span className="font-mono">0xFFFFFFFF</span>，输入输出均反射</li>
+                            <li>校验值：<span className="font-mono">"123456789" → 0xCBF43926</span></li>
+                            <li>覆盖区间：<strong>12 字节头 + payload</strong>，不含尾部 CRC 字段本身</li>
                         </ul>
                     </div>
                 </div>

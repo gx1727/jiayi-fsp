@@ -24,13 +24,15 @@
 | payload_len | 载荷长度（u16） |
 | flags | 数据包标志位（u16） |
 | bitmap | 位图，记录各 chunk 的接收状态 |
-| missing_chunks | 缺失块列表 |
+| missing_chunks | 缺失块列表；`chunks` 恒为「发送方自己尚未收到的块」 |
 | udp_ready | UDP 可用性就绪通知 |
 | resume_session | 恢复会话请求 |
-| missing_chunks | 缺失块列表（双向：请求 / 返回） |
 | file_hash | 文件哈希，Blake3 的 64 字符十六进制串 |
-| window | 滑动窗口大小 |
-| AIMD | 加性增乘性减动态流控算法 |
+| window | 滑动窗口大小（**在途上限**，Server 下发，Client 不得修改） |
+| burst_size | 发送批次大小（发送端本地参数，初值 = `window`） |
+| batch_gap_us | 批间隔（微秒，发送端本地参数，初值 2000） |
+| direction | 会话方向（`upload` / `download`），决定接收方与发送方 |
+| AIMD | 加性增乘性减动态流控算法（**发送端策略**，非协议层机制） |
 
 ## 控制面消息
 
@@ -41,9 +43,9 @@
 | upload_start / upload_accept | C→S / S→C | 上传会话建立 |
 | download_start / download_accept | C→S / S→C | 下载会话建立 |
 | udp_ready | S→C | UDP 可用性通知 |
-| missing_chunks | 双向 | 缺失块列表请求 / 返回 |
+| missing_chunks | 双向 | 缺失块列表报告（`mode=report`）/ 索要（`mode=request`） |
 | progress_update | 双向 | 传输进度更新（单位：chunk 数） |
 | session_pause / session_abort | 双向 | 会话暂停 / 中止 |
 | resume_session / resume_ack | C→S / S→C | 会话恢复 |
-| upload_complete / download_complete | S→C / 双向 | 传输完成 |
+| upload_complete / download_complete | S→C / C→S | 传输完成（**完成消息一律由接收方发布**） |
 | asset_recall / asset_recall_complete | C→S / S→C | 资产撤回请求与回执 |

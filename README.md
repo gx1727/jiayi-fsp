@@ -7,9 +7,13 @@ designed for trusted local networks.
 - Control Plane: MQTT
 - Data Plane: UDP
 
-✅ Status: v1.0.0 (Production Ready)
+✅ Status: v1.1.0 (Draft — spec under revision)
 
-This release aligns the specification with the reference implementation
+This release completes the control-plane timing semantics and fixes several
+definition errors carried over from v1.0.0. It is still **under revision** —
+the wire format is not frozen yet.
+
+v1.0.0 aligned the specification with the reference implementation
 `jiayi-fsp-core` 0.2.0 / `jiayi-client` 1.0.0.
 
 ## Goals
@@ -33,9 +37,10 @@ are out of scope.
 ```
 proto/        Protocol data structures (C / Rust)
 docs/spec/    Normative specification — single source of truth
-docs/         GitHub Pages deployment (spec + protocol website build)
+docs/         Spec sources served by GitHub Pages (build artifacts not committed)
 doc/          Single-file consolidated specification (generated, do not edit)
 examples/     Broker ACL and reference implementation examples
+  rust/       Executable conformance suite (deterministic simulation + real UDP)
 tools/        Spec tooling (compilation generator / consistency checker) + debug tools
 site/         Protocol website source
 ```
@@ -50,6 +55,40 @@ python3 tools/build-spec-compilation.py           # regenerate the compilation
 python3 tools/check-spec-consistency.py           # endianness / types / topics / proto alignment
 python3 tools/build-spec-compilation.py --check   # CI mode
 ```
+
+## Website Deployment
+
+The protocol website is published to the **`gh-pages` branch**; build artifacts
+are **not** committed to `main` (hashed asset names would otherwise churn
+hundreds of files on every change).
+
+```bash
+cd site
+npm run build        # tsc -b && vite build
+npm run copy:spec    # copy docs/spec + docs/diagrams into dist/ (else /spec/*.md 404s)
+npm run deploy       # publish dist/ to the gh-pages branch
+```
+
+CI (`.github/workflows/deploy-pages.yml`) does this automatically on push to
+`main`.
+
+> **One-time repository setting**: Settings → Pages → Source = *Deploy from a
+> branch*, branch `gh-pages`, directory `/(root)`.
+
+## Reference Implementation
+
+`examples/rust/` turns the specification's **normative requirements** into
+executable assertions — a deterministic simulation (virtual clock + virtual
+broker + fault-injectable virtual UDP) plus a real-UDP loopback example.
+
+```bash
+cd examples/rust
+cargo test            # 27 core unit tests + 9 conformance scenarios
+cargo run -p fsp-sim  # run every scenario and print the observations
+```
+
+Each scenario pins one normative rule — zero-loss must not deadlock, holes must
+be repaired, `next_chunk_id` must be the *first missing* chunk, and so on.
 
 ## Documentation Quick Links
 

@@ -10,6 +10,17 @@ Thumbs.db
 
 # Build artifacts
 site/dist/
+examples/rust/target/
+
+# Pages 部署产物 —— 由 gh-pages 分支承载，不再入库。
+# docs/ 下只保留**源文件**（spec/、diagrams/），构建产物由
+# .github/workflows/deploy-pages.yml 发布到 gh-pages 分支。
+docs/assets/
+docs/index.html
+docs/404.html
+docs/favicon.svg
+docs/logo.png
+docs/.nojekyll
 
 # Dependencies
 node_modules/

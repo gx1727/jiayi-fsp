@@ -11,13 +11,13 @@ sequenceDiagram
     Note over Client, Server: 1. 会话建立 (控制面)
     Client->>MQTT: upload_start
     MQTT->>Server: upload_start
-    Server->>MQTT: upload_accept (session_id, chunk_count, window, udp_port)
+    Server->>MQTT: upload_accept (session_id, chunk_count, window, udp_port, tcp_port)
     MQTT->>Client: upload_accept
 
     Note over Client, Server: 2. UDP 可用性探测
     Client->>Server: UDP_PROBE (UDP)
     Server-->>Client: UDP_PROBE_ACK (UDP)
-    Server->>MQTT: udp_ready
+    Server->>MQTT: udp_ready (udp_port)
     MQTT->>Client: udp_ready
 
     Note over Client, Server: 3. 数据传输 (UDP 数据面)
@@ -26,14 +26,16 @@ sequenceDiagram
     Client->>Server: UDP chunk #2 ...
     Client->>Server: UDP chunk #N
 
-    Note over Client, Server: 4. 缺失重传 (控制面裁决)
-    Server->>MQTT: missing_chunks [3, 7, 9]
-    MQTT->>Client: missing_chunks [3, 7, 9]
+    Note over Client, Server: 4. 缺失裁决循环 (控制面，每 50ms)
+    Server->>MQTT: missing_chunks mode=report [3, 7, 9]
+    MQTT->>Client: missing_chunks mode=report [3, 7, 9]
     Client->>Server: UDP chunk #3 (Resend)
     Client->>Server: UDP chunk #7 (Resend)
     Client->>Server: UDP chunk #9 (Resend)
+    Server->>MQTT: missing_chunks mode=report []
+    MQTT->>Client: (空数组 = 可以继续推进)
 
-    Note over Client, Server: 5. 校验与提交
+    Note over Client, Server: 5. 校验与提交 (接收方驱动)
     Server->>Server: Verify Hash & Atomic Rename
     Server->>MQTT: upload_complete
     MQTT->>Client: upload_complete
@@ -54,15 +56,16 @@ sequenceDiagram
                   <li><strong>控制优先：</strong> 所有状态变更（开始、重传、完成）均由 MQTT 驱动。</li>
                   <li><strong>UDP 探测：</strong> Client 发送 UDP_PROBE，Server 返回 UDP_PROBE_ACK 并通过 MQTT 发送 udp_ready。</li>
                   <li><strong>超时处理：</strong> Client 等待 PROBE_ACK 超时（建议 2s）则判定 UDP 不可用，回退到 TCP。</li>
-                  <li><strong>被动重传：</strong> Client 不猜测丢包，完全依赖 Server 的 missing_chunks 指令。</li>
+                  <li><strong>被动重传：</strong> Client 不猜测丢包，完全依赖接收方的 missing_chunks 裁决。</li>
+                  <li><strong>裁决节奏：</strong> 接收方每 50ms 下发一次裁决，空列表也必须下发；发送方 1000ms 未收到裁决时主动 mode=request 索要。</li>
               </ul>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
               <h4 className="font-bold text-purple-800 mb-2">异常处理设计</h4>
               <ul className="list-disc list-inside text-sm text-purple-700 space-y-1">
-                  <li><strong>断点续传：</strong> 任意时刻中断，再次连接时通过 resume_session 恢复，仅需重传 missing 列表。</li>
+                  <li><strong>断点续传：</strong> 任意时刻中断，再次连接时通过 resume_session 恢复；resume_ack 的 next_chunk_id 为「第一个缺失块」，空洞块由周期裁决持续指认。</li>
                   <li><strong>乱序容忍：</strong> UDP 包到达顺序不影响写入，Chunk ID 决定落盘位置。</li>
-                  <li><strong>TCP 降级：</strong> UDP 不可用或异常时启用 TCP，保持 chunk 与 bitmap 语义。</li>
+                  <li><strong>TCP 降级：</strong> UDP 不可用或异常时启用 TCP，保持 chunk 与 bitmap 语义（线路格式待定义）。</li>
               </ul>
           </div>
       </div>
@@ -70,8 +73,9 @@ sequenceDiagram
       <div className="mt-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
           <h4 className="font-bold text-green-800 mb-2">UDP 探测包格式</h4>
           <div className="text-sm text-green-700 space-y-2">
-              <p><strong>UDP_PROBE:</strong> flags.bit3=1，payload 为 session_id 的 4 字节小端编码</p>
-              <p><strong>UDP_PROBE_ACK:</strong> flags.bit3=1，payload 为 session_id + 1 字节状态码（0=成功，1=失败）</p>
+              <p><strong>UDP_PROBE:</strong> flags.bit3=1，payload_len=4，payload 为 session_id 的 4 字节小端编码</p>
+              <p><strong>UDP_PROBE_ACK:</strong> flags.bit3=1，payload_len=5，payload 为 session_id + 1 字节状态码（0=成功，1=失败）</p>
+              <p><strong>判别规则：</strong> 二者共用 flags.bit3，以 payload_len（4 / 5）区分</p>
           </div>
       </div>
     </div>

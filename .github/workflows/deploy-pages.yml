@@ -1,0 +1,88 @@
+name: Deploy Pages
+
+# 官网部署：构建 site/ → 复制规范源文件 → 发布到 gh-pages 分支。
+#
+# 为什么要 gh-pages 分支而不是直接提交 docs/：
+#   site/dist/assets/ 里是带内容 hash 的构建产物，每次构建全量换名。
+#   把它提交进 main 会让每次改官网都产生上百个文件的 diff 噪音。
+#   改由 gh-pages 分支承载后，main 只保留**源文件**（docs/spec/、docs/diagrams/），
+#   构建产物不再入库。
+#
+# ⚠️ 前置条件（一次性，在仓库设置里改）：
+#   Settings → Pages → Build and deployment → Source ＝ **Deploy from a branch**
+#   分支选 **gh-pages**，目录选 **/(root)**。
+#   不改这一项，Pages 仍会从 main 的 docs/ 取文件 —— 而那里的 assets/ 已不再入库，
+#   站点会白屏。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'docs/spec/**'
+      - 'docs/diagrams/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个部署；新 push 取消旧的
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # gh-pages 发布需要完整历史
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: site/pnpm-lock.yaml
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '9'
+
+      - name: 安装依赖
+        working-directory: site
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建站点
+        working-directory: site
+        run: pnpm run build
+
+      - name: 复制规范源文件与图
+        # 规范源文件在 docs/ 下，不在 site/dist/ 里 —— 不复制的话
+        # /jiayi-fsp/spec/00-overview.md 会 404
+        working-directory: site
+        run: pnpm run copy:spec
+
+      - name: 校验产物完整性
+        run: |
+          test -f site/dist/index.html
+          test -d site/dist/assets
+          test -f site/dist/spec/00-overview.md
+          test -d site/dist/diagrams
+          echo "产物校验通过"
+
+      - name: 发布到 gh-pages 分支
+        # gh-pages 自己负责克隆、建分支、提交并推送。
+        # --nojekyll：让 gh-pages 写入 .nojekyll（它默认不发布点文件），
+        #   告诉 GitHub Pages 不要对产物跑 Jekyll。
+        working-directory: site
+        run: >-
+          pnpm exec gh-pages
+          --dist dist
+          --branch gh-pages
+          --nojekyll
+          --message "chore: 更新官网产物 [skip ci]"

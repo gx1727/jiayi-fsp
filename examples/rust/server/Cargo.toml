@@ -1,0 +1,10 @@
+[package]
+name = "fsp-server-example"
+description = "JIAYI-FSP 接收端示例（真实 UDP 回环）"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+fsp-core = { workspace = true }

@@ -5,6 +5,7 @@ const MessageDefinitions = () => {
   const loginTopic = `/jiayi/fsp/client/{client_id}/login`;
   const loginPayload = `{
   "type": "login",
+  "proto_version": "string",
   "device_id": "string",
   "username": "string|null"
 }`;
@@ -13,6 +14,8 @@ const MessageDefinitions = () => {
   const loginAckPayload = `{
   "type": "login_ack",
   "result": "success|fail",
+  "code": "string|null",
+  "proto_version": "string",
   "message": "string|null",
   "user": {
     "user_id": "i64",
@@ -50,6 +53,7 @@ const MessageDefinitions = () => {
   "chunk_count": "u32",
   "window": "u32",
   "udp_port": "u16",
+  "tcp_port": "u16",
   "chunk_size": "u32",
   "file_exists": "bool"
 }`;
@@ -57,13 +61,16 @@ const MessageDefinitions = () => {
   const udpReadyTopic = `/jiayi/fsp/server/{client_id}/udp_ready`;
   const udpReadyPayload = `{
   "type": "udp_ready",
-  "session_id": "string"
+  "session_id": "string",
+  "udp_port": "u16"
 }`;
 
   const missingChunksTopic = `/jiayi/fsp/{role}/{client_id}/missing_chunks`;
   const missingChunksPayload = `{
   "type": "missing_chunks",
+  "mode": "report|request",
   "session_id": "string",
+  "missing_count": "u32",
   "chunks": ["u32"]
 }`;
 
@@ -92,6 +99,7 @@ const MessageDefinitions = () => {
   "type": "resume_ack",
   "session_id": "string",
   "next_chunk_id": "u32",
+  "missing_count": "u32",
   "udp_port": "u16"
 }`;
 
@@ -100,20 +108,23 @@ const MessageDefinitions = () => {
   "type": "upload_complete",
   "session_id": "string",
   "result": "string",
-  "file_hash": "string|null"
+  "code": "string|null",
+  "file_hash": "string|null",
+  "asset_id": "string|null"
 }`;
 
   const sessionAbortTopic = `/jiayi/fsp/{role}/{client_id}/session_abort`;
   const sessionAbortPayload = `{
   "type": "session_abort",
   "session_id": "string",
-  "reason": "string"
+  "reason": "string",
+  "detail": "string|null"
 }`;
 
   const downloadStartTopic = `/jiayi/fsp/client/{client_id}/download_start`;
   const downloadStartPayload = `{
   "type": "download_start",
-  "session_id": "string",
+  "session_id": "string|null",
   "file_hash": "string",
   "file_name": "string",
   "size": "u64",
@@ -123,17 +134,22 @@ const MessageDefinitions = () => {
   const downloadAcceptTopic = `/jiayi/fsp/server/{client_id}/download_accept`;
   const downloadAcceptPayload = `{
   "type": "download_accept",
+  "file_hash": "string",
   "session_id": "string",
   "chunk_count": "u32",
   "window": "u32",
-  "tcp_port": "u16"
+  "udp_port": "u16",
+  "tcp_port": "u16",
+  "chunk_size": "u32"
 }`;
 
-  const downloadCompleteTopic = `/jiayi/fsp/{role}/{client_id}/download_complete`;
+  const downloadCompleteTopic = `/jiayi/fsp/client/{client_id}/download_complete`;
   const downloadCompletePayload = `{
   "type": "download_complete",
   "session_id": "string",
-  "result": "string"
+  "result": "string",
+  "code": "string|null",
+  "file_hash": "string|null"
 }`;
 
   const assetRecallTopic = `/jiayi/fsp/client/{client_id}/asset_recall`;
@@ -149,7 +165,8 @@ const MessageDefinitions = () => {
   "file_hash": "string",
   "asset_id": "string|null",
   "deleted": "bool",
-  "result": "string"
+  "code": "string|null",
+  "detail": "string|null"
 }`;
 
   return (
@@ -209,7 +226,7 @@ const MessageDefinitions = () => {
           </div>
           <div className="space-y-2">
             <h4 className="font-semibold text-gray-700">Missing Chunks</h4>
-            <p className="text-sm text-gray-500">双向：缺失数据块列表</p>
+            <p className="text-sm text-gray-500">双向：缺失块报告（mode=report）/ 索要（mode=request）</p>
             <CodeBlock code={missingChunksTopic} language="text" />
             <CodeBlock code={missingChunksPayload} language="json" />
           </div>
@@ -251,7 +268,7 @@ const MessageDefinitions = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2">
             <h4 className="font-semibold text-gray-700">Upload Complete</h4>
-            <p className="text-sm text-gray-500">Server → Client：上传完成通知</p>
+            <p className="text-sm text-gray-500">Server → Client：上传完成通知（由接收方 Server 发布）</p>
             <CodeBlock code={uploadCompleteTopic} language="text" />
             <CodeBlock code={uploadCompletePayload} language="json" />
           </div>
@@ -281,7 +298,7 @@ const MessageDefinitions = () => {
           </div>
           <div className="space-y-2">
             <h4 className="font-semibold text-gray-700">Download Complete</h4>
-            <p className="text-sm text-gray-500">双向：下载完成通知</p>
+            <p className="text-sm text-gray-500">Client → Server：下载完成通知（由接收方 Client 发布）</p>
             <CodeBlock code={downloadCompleteTopic} language="text" />
             <CodeBlock code={downloadCompletePayload} language="json" />
           </div>
@@ -312,8 +329,11 @@ const MessageDefinitions = () => {
           <li>所有消息必须携带 <code className="bg-yellow-100 px-1 rounded">type</code> 字段标识消息类型</li>
           <li><code className="bg-yellow-100 px-1 rounded">session_id</code> 为 u32 类型，在 JSON 中以字符串形式传输，由 Server 生成</li>
           <li><code className="bg-yellow-100 px-1 rounded">file_hash</code> 一律为 Blake3 哈希的 64 字符十六进制串</li>
-          <li>Client 发送 upload_start 时 session_id 可为空</li>
-          <li>未识别的消息类型必须忽略，保持幂等性</li>
+          <li>Client 发送 upload_start / download_start 时 session_id 可为空</li>
+          <li>未识别的消息类型必须忽略，保持幂等性（控制面使用 QoS 1，重复投递不得改变语义）</li>
+          <li><code className="bg-yellow-100 px-1 rounded">missing_chunks</code> 的 <code className="bg-yellow-100 px-1 rounded">chunks</code> 恒为「发送方自己尚未收到的块」</li>
+          <li>完成消息一律由<strong>接收方</strong>发布：upload_complete 由 Server，download_complete 由 Client</li>
+          <li>接收方每 50ms 下发一次缺失裁决，<strong>空列表也必须下发</strong>（空数组 = 可以继续推进）</li>
           <li>Client 仅发布 <code className="bg-yellow-100 px-1 rounded">{'/jiayi/fsp/client/{client_id}/#'}</code>，订阅 <code className="bg-yellow-100 px-1 rounded">{'/jiayi/fsp/server/{client_id}/#'}</code></li>
           <li>Server 订阅 <code className="bg-yellow-100 px-1 rounded">/jiayi/fsp/client/+/#</code>，发布 <code className="bg-yellow-100 px-1 rounded">{'/jiayi/fsp/server/{client_id}/#'}</code>（Topic 固定 5 层）</li>
         </ul>

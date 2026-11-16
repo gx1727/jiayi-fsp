@@ -15,9 +15,10 @@
 ## 状态与控制
 
 - `bitmap`：接收进度位图
-- `window`（u32）：滑动窗口大小
+- `window`（u32）：滑动窗口大小（**在途上限**，Server 下发，Client 不得修改）
 - `client_id`（device_id，string）：客户端设备 ID
-- `missing_chunks`（Vec<u32>）：缺失数据块列表
+- `missing_chunks`（Vec<u32>）：缺失数据块列表；语义为「**发送方自己尚未收到的块**」
+- `mode`（string）：`missing_chunks` 的判别字段，`report`（报告缺失）/ `request`（索要缺失列表）
 - `udp_ready`：UDP 就绪通知
 - `resume_session`：会话恢复请求
 - `progress_update`：传输进度更新

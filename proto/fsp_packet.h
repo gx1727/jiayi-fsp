@@ -3,7 +3,7 @@
 
 /*
  * JIAYI-FSP UDP 数据包格式
- * 规范来源: docs/spec/08-packet-format.md  (协议版本 v1.0.0)
+ * 规范来源: docs/spec/08-packet-format.md  (协议版本 v1.1.0)
  *
  * 全部多字节整数采用小端序 (Little-Endian)。
  * 头部 12 字节 + payload + 尾部 4 字节 CRC32。
@@ -15,6 +15,13 @@
  * 10-11 flags        uint16_t 标志位
  * 12..  payload      uint8_t[] 文件数据
  * End-4 crc32        uint32_t CRC32 校验码（覆盖 header+payload）
+ *
+ * CRC32 变体: CRC-32/ISO-HDLC (zlib crc32)
+ *   多项式 0x04C11DB7 (反射 0xEDB88320), 初值 0xFFFFFFFF,
+ *   输入输出均反射, 末尾异或 0xFFFFFFFF。
+ *   校验值: "123456789" -> 0xCBF43926
+ *   覆盖区间: 第 0 字节到第 (12 + payload_len - 1) 字节, 即 header+payload,
+ *             不含尾部 crc32 字段本身。
  */
 
 #define FSP_HEADER_SIZE 12

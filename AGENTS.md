@@ -7,9 +7,10 @@
 ```
 proto/        协议数据结构定义（C / Rust）
 docs/spec/    规范性文档——唯一事实来源
-docs/         GitHub Pages 部署目录（规范 + 协议官网构建产物）
+docs/         规范源文件（GitHub Pages 对外提供；构建产物不入库）
 doc/          单文件版规范合集（由 tools/ 自动生成，勿手改）
 examples/     Broker ACL 与参考实现示例
+  rust/       可执行的一致性套件（确定性仿真 + 真实 UDP）
 tools/        规范工具（合集生成 / 一致性检查）+ 调试工具集
 site/         协议官网源码
 ```
@@ -30,7 +31,22 @@ python3 tools/check-spec-consistency.py
 python3 tools/build-spec-compilation.py --check
 ```
 
-CI（`.github/workflows/spec-check.yml`）会强制执行第 3、4 步。
+CI（`.github/workflows/spec-check.yml`）会强制执行第 3、4 步，
+并在 `conformance` 作业中运行参考实现的一致性场景（`cargo test`）。
+
+### 参考实现的一致性场景（examples/rust/）
+
+规范里的**规范性要求**必须在 `examples/rust/fsp-sim` 中有对应场景：
+
+```bash
+cd examples/rust
+cargo test                # 27 个核心单测 + 9 个一致性场景
+cargo run -p fsp-sim      # 跑一遍全部场景并打印观测结果
+```
+
+- 新增/修改规范中的**规范性**行为时，**必须**同步新增或调整对应场景；
+- 场景的判据写在 `fsp-sim/src/scenarios.rs` 的 `pass` 字段里；
+- 仿真必须**确定性**（带种子的 PRNG）；故障注入只作用于首次出现。
 
 ## Build, Lint, and Test Commands
 
@@ -57,9 +73,30 @@ pnpm lint
 # 预览构建结果
 pnpm preview
 
-# 部署到 GitHub Pages（产物需同步到仓库根的 docs/ 目录）
-pnpm build && rsync -a --delete dist/ ../docs/
+# 把规范源文件复制进构建产物（部署必需，否则 /spec/*.md 会 404）
+npm run copy:spec
+
+# 部署到 GitHub Pages（发布到 gh-pages 分支）
+# 产物包含：站点本体 + docs/spec/ + docs/diagrams/
+npm run deploy
 ```
+
+### 官网部署模型
+
+官网由 **gh-pages 分支**承载，**不提交构建产物到 main**：
+
+| 位置 | 内容 | 是否入库 |
+|------|------|----------|
+| `main:site/` | 站点源码 | ✅ |
+| `main:docs/spec/`、`main:docs/diagrams/` | 规范源文件（Pages 对外提供） | ✅ |
+| `main:docs/assets/` 等 | 带 hash 的构建产物 | ❌ 已 gitignore |
+| `gh-pages` 分支 | 部署产物（站点 + spec + diagrams） | — |
+
+- 部署由 `.github/workflows/deploy-pages.yml` 自动执行（push 到 main 时触发）。
+- **一次性前置设置**：Settings → Pages → Source ＝ *Deploy from a branch*，
+  分支选 `gh-pages`，目录选 `/(root)`。
+- 本地预览部署产物：`cd site && npm run build && npm run copy:spec`，
+  然后用任意静态服务器指向 `site/dist/`。
 
 ## Code Style Guidelines
 

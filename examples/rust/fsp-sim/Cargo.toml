@@ -1,0 +1,11 @@
+[package]
+name = "fsp-sim"
+description = "JIAYI-FSP 确定性仿真与一致性场景"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+fsp-core = { workspace = true }
+serde_json = { workspace = true }

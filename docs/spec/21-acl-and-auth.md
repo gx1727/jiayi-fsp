@@ -18,7 +18,7 @@
   - publish：`/jiayi/fsp/server/{client_id}/#`
 
 > v0.2 草案中 Server 的订阅写作 `/jiayi/fsp/client/+`（仅 4 层），
-> 而消息 Topic 为 5 层，**该过滤器匹配不到任何消息**，已在 v1.0.0 更正为 `+/+`。
+> 而消息 Topic 为 5 层，**该过滤器匹配不到任何消息**，已在 v1.0.0 更正为 `/jiayi/fsp/client/+/#`。
 >
 > 更严格的实现可按 action 逐个订阅（如 `/jiayi/fsp/client/+/login`、
 > `/jiayi/fsp/client/+/upload_start`），语义等价且权限更小；

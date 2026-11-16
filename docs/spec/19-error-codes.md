@@ -12,6 +12,23 @@
 | STORAGE | 持久化与文件系统错误 |
 | PROTOCOL | 协议格式与状态错误 |
 
+## 错误码上线路（规范性）
+
+本章的错误码**必须**通过控制面消息上线路，字段映射如下：
+
+| 消息 | 字段 | 语义 |
+|------|------|------|
+| `session_abort` | `reason` | 终止原因，**必填**，取值来自本章 |
+| `session_abort` | `detail` | 可读补充说明，仅用于日志与 UI，**不得**用于逻辑判断 |
+| `upload_complete` | `code` | 失败时的错误码；成功时为 null |
+| `download_complete` | `code` | 失败时的错误码；成功时为 null |
+| `asset_recall_complete` | `code` | 未删除时的错误码；成功删除时为 null |
+
+- 发送方与接收方**必须**按错误码做分支判断，**不得**解析 `detail` 自由文本。
+- `result` 字段只表达「成功 / 失败」，**不承载**错误码；
+  `code` / `reason` 字段**必须**是本章中定义过的标识符。
+- **未列在本章的错误码**一律视为 `UNKNOWN_ERROR`。
+
 ## 建议错误码
 
 ### SESSION
@@ -31,7 +48,7 @@
 ### INTEGRITY
 
 - `CRC32_INVALID`：包级校验失败（丢弃该包，不标记位图）
-- `FILE_HASH_MISMATCH`：文件级内容哈希不一致
+- `FILE_HASH_MISMATCH`：文件级内容哈希不一致（**必须**以 `session_abort` 终止会话，见 12 章）
 - `INVALID_CHUNK`：chunk_id 越界或非法
 - `CHUNK_ALREADY_RECEIVED`：重复 chunk（幂等丢弃）
 
@@ -40,6 +57,7 @@
 - `ACL_DENY`：ACL 拒绝访问
 - `CLIENT_ID_INVALID`：client_id 非法
 - `LOGIN_FAILED`：登录认证失败
+- `PROTO_VERSION_UNSUPPORTED`：协议版本不受支持（见 06 章 `login` / `login_ack`）
 
 ### TIMEOUT
 
@@ -64,6 +82,6 @@
 
 - 错误记录日志
 - INTEGRITY 错误包直接丢弃，且**不得**写入位图
-- SESSION 错误触发 `session_abort`
+- SESSION 错误触发 `session_abort`（`reason` 填对应错误码）
 - CHUNK_ALREADY_RECEIVED 属幂等情形，静默丢弃即可
 - 同一错误不得导致状态机进入非法状态

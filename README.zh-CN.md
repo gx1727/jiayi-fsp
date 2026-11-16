@@ -5,9 +5,12 @@ JIAYI File Sync Protocol（JIAYI-FSP）是一种为可信局域网设计的混�
 - 控制平面：MQTT
 - 数据平面：UDP
 
-状态：**v1.0.0（生产可用）**
+状态：**v1.1.0（草案，规范修订中）**
 
-本版本与参考实现 `jiayi-fsp-core` 0.2.0 / `jiayi-client` 1.0.0 对齐。
+本版本补全了控制面节奏语义，并修正了 v1.0.0 遗留的若干定义错误。
+**规范尚未冻结**，线路格式仍可能变动。
+
+v1.0.0 与参考实现 `jiayi-fsp-core` 0.2.0 / `jiayi-client` 1.0.0 对齐。
 
 ## 项目目标
 
@@ -28,7 +31,7 @@ JIAYI File Sync Protocol（JIAYI-FSP）是一种为可信局域网设计的混�
 ```
 proto/        协议数据结构定义（C / Rust）
 docs/spec/    规范性文档——唯一事实来源
-docs/         GitHub Pages 部署目录（规范 + 协议官网构建产物）
+docs/         GitHub Pages 对外提供的规范源文件（构建产物不入库）
 doc/          单文件版规范合集（自动生成，勿手改）
 examples/     Broker ACL 与参考实现示例
 tools/        规范工具（合集生成器 / 一致性检查器）+ 调试工具集
@@ -44,6 +47,37 @@ python3 tools/build-spec-compilation.py           # 重新生成单文件合集
 python3 tools/check-spec-consistency.py           # 端序 / 类型 / Topic / proto 对齐检查
 python3 tools/build-spec-compilation.py --check   # CI 校验模式
 ```
+
+## 官网部署
+
+官网发布到 **`gh-pages` 分支**；构建产物**不提交**到 `main`
+（带 hash 的资源名会让每次改动产生上百个文件的 diff 噪音）。
+
+```bash
+cd site
+npm run build        # tsc -b && vite build
+npm run copy:spec    # 把 docs/spec + docs/diagrams 复制进 dist/（否则 /spec/*.md 会 404）
+npm run deploy       # 发布 dist/ 到 gh-pages 分支
+```
+
+CI（`.github/workflows/deploy-pages.yml`）会在 push 到 main 时自动执行。
+
+> **一次性仓库设置**：Settings → Pages → Source ＝ *Deploy from a branch*，
+> 分支选 `gh-pages`，目录选 `/(root)`。
+
+## 参考实现
+
+`examples/rust/` 把规范里的**规范性要求**变成可执行断言 ——
+确定性仿真（虚拟时钟 + 虚拟 Broker + 可注入故障的虚拟 UDP）加真实 UDP 回环示例。
+
+```bash
+cd examples/rust
+cargo test            # 27 个核心单测 + 9 个一致性场景
+cargo run -p fsp-sim  # 跑一遍全部场景并打印观测结果
+```
+
+每个场景钉住一条规范条款：零丢包不得死锁、空洞块必须补发、
+`next_chunk_id` 必须是**第一个缺失块**，等等。
 
 ## 架构概览
 

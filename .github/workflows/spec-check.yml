@@ -27,3 +27,23 @@ jobs:
 
       - name: 校验规范内部一致性
         run: python3 tools/check-spec-consistency.py
+
+  conformance:
+    # 参考实现的一致性场景：把规范里的**规范性要求**变成可执行断言。
+    # 与规范检查配套 —— 规范改了就必须让实现跟上。
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: 运行一致性场景
+        working-directory: examples/rust
+        run: cargo test --locked 2>/dev/null || cargo test
+
+      - name: 运行场景演示（输出观测结果）
+        working-directory: examples/rust
+        run: cargo run -p fsp-sim

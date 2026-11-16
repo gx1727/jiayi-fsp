@@ -1,0 +1,11 @@
+[package]
+name = "fsp-core"
+description = "JIAYI-FSP 协议核心库（规范 v1.1.0 的可执行断言）"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }

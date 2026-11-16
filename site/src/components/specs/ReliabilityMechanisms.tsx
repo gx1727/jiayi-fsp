@@ -5,7 +5,7 @@ const mechanisms = [
   {
     problem: '丢包',
     solution: 'Missing Chunks + Resend',
-    description: 'Server 统计未收到的 Chunk ID，通过 MQTT 发送 missing_chunks 消息，Client 针对性重传。',
+    description: '接收方每 50ms 通过 MQTT 下发 missing_chunks（mode=report），列出自己尚未收到的 Chunk ID，发送方针对性重传。空列表也必须下发——它是「可以继续推进」的裁决。',
     icon: AlertOctagon,
   },
   {
@@ -17,25 +17,25 @@ const mechanisms = [
   {
     problem: '重复',
     solution: 'Bitmap / Received Set',
-    description: 'Server 维护已接收 Chunk 的集合，重复收到的包会被直接丢弃，不影响文件正确性。',
+    description: '接收方维护已接收 Chunk 的位图集合，重复收到的包会被直接丢弃，不影响文件正确性；位图同时用于计算缺失列表与恢复续传。',
     icon: CheckCircle,
   },
   {
     problem: '中断',
     solution: 'resume_session 恢复',
-    description: 'Session ID 关联文件状态。网络中断后，Client 通过 resume_session 恢复会话，Server 返回缺失列表以支持断点续传。',
+    description: 'Session ID 关联文件状态。中断后通过 resume_session 恢复，resume_ack 返回 next_chunk_id（第一个缺失块）与数据面端口；低于最大已收 id 的空洞块由周期裁决持续指认补发。',
     icon: Activity,
   },
   {
     problem: 'UDP不可用',
     solution: 'TCP 降级 (Fallback)',
-    description: '当 UDP 探测失败或丢包率持续过高时，协议自动降级为 TCP 传输，确保在恶劣网络下仍能完成同步。',
+    description: '当 UDP 探测失败（PROBE_ACK 超时约 2s）或异常时，协议可降级为 TCP 传输，保持 chunk 与 bitmap 语义不变。TCP 线路格式待定义。',
     icon: Shield,
   },
   {
     problem: '内存溢出',
     solution: 'Random Access Write + Bitmap',
-    description: '强制要求接收端不缓存大文件，而是直接写入磁盘；仅维护位图状态，内存占用与文件大小无关。',
+    description: '强制要求接收端不缓存大文件，而是按 offset = chunk_id × chunk_size 直接写入磁盘；仅维护位图状态，内存占用与文件大小无关。',
     icon: Database,
   },
 ];

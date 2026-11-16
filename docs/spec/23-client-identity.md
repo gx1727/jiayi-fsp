@@ -16,6 +16,13 @@
 - iOS Keychain
 - 桌面加密文件
 
+## 与登录消息的一致性
+
+- `login` 载荷中的 `device_id` **必须**与 Topic 中的 `{client_id}` 一致。
+- 不一致时 Server **必须**以 `CLIENT_ID_INVALID` 拒绝登录（见 19 章）。
+- 该等价关系是 ACL 隔离（21 章）与跨 client_id 审计（20 章）的基础，
+  两者都依赖「Topic 中的 client_id 即为已认证的设备身份」。
+
 ## 多设备
 
 - 1 Device ⇔ 1 client_id；1 Account ⇔ N client_id（协议不感知账号）

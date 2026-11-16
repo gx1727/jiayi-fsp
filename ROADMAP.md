@@ -1,6 +1,7 @@
 # Roadmap
 
-- v1.0: Protocol freeze ✅
-- v1.1: 下载流（download_start / download_accept）与 TCP fallback 落地
-- v1.2: 安全模型落地——重放保护、加密与认证
+- v1.0: 协议对齐参考实现 ✅（**已回退为草案**，见 CHANGELOG v1.1.0）
+- v1.1: 控制面节奏补全 + 定义错误修正（**进行中**）
+- v1.2: TCP fallback 线路格式、下载方向全面落地、安全模型落地（重放保护、加密与认证）
+- v1.3: 逐块哈希（Merkle 树），使文件级校验可增量完成、避免整文件重读
 - v2.0: 并发 session 与多文件批量传输
