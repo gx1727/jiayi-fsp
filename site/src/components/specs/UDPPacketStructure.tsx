@@ -126,7 +126,7 @@ const UDPPacketStructure = () => {
                     <div>
                         <h3 className="text-lg font-bold text-gray-900 mb-2">错误处理规范 (Error Handling)</h3>
                         <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                            <li>所有多字节字段必须使用 <strong>网络字节序 (小端 Little Endian)</strong></li>
+                            <li>所有多字节字段必须使用 <strong>小端序 (Little-Endian)</strong></li>
                             <li>CRC32 校验失败的包 <strong>必须丢弃 (MUST discard)</strong></li>
                             <li>Session ID 不匹配的包 <strong>必须丢弃 (MUST discard)</strong></li>
                             <li>Payload Length 非法的包 <strong>必须丢弃 (MUST discard)</strong></li>
@@ -144,7 +144,7 @@ const UDPPacketStructure = () => {
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                        <span>payload_len ≤ chunk_size</span>
+                        <span>payload_len ≤ chunk_size（上限 <span className="font-mono font-bold text-gray-900">1400</span> 字节，避免 IP 分片）</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-purple-500"></span>

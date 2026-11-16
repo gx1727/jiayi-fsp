@@ -50,7 +50,8 @@ const MessageDefinitions = () => {
   "chunk_count": "u32",
   "window": "u32",
   "udp_port": "u16",
-  "chunk_size": "u32"
+  "chunk_size": "u32",
+  "file_exists": "bool"
 }`;
 
   const udpReadyTopic = `/jiayi/fsp/server/{client_id}/udp_ready`;
@@ -99,7 +100,7 @@ const MessageDefinitions = () => {
   "type": "upload_complete",
   "session_id": "string",
   "result": "string",
-  "file_hash": "u64|null"
+  "file_hash": "string|null"
 }`;
 
   const sessionAbortTopic = `/jiayi/fsp/{role}/{client_id}/session_abort`;
@@ -132,6 +133,22 @@ const MessageDefinitions = () => {
   const downloadCompletePayload = `{
   "type": "download_complete",
   "session_id": "string",
+  "result": "string"
+}`;
+
+  const assetRecallTopic = `/jiayi/fsp/client/{client_id}/asset_recall`;
+  const assetRecallPayload = `{
+  "type": "asset_recall",
+  "file_hash": "string",
+  "asset_id": "string|null"
+}`;
+
+  const assetRecallCompleteTopic = `/jiayi/fsp/server/{client_id}/asset_recall_complete`;
+  const assetRecallCompletePayload = `{
+  "type": "asset_recall_complete",
+  "file_hash": "string",
+  "asset_id": "string|null",
+  "deleted": "bool",
   "result": "string"
 }`;
 
@@ -271,15 +288,34 @@ const MessageDefinitions = () => {
         </div>
       </div>
 
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">资产撤回 (Asset Recall)</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <h4 className="font-semibold text-gray-700">Asset Recall</h4>
+            <p className="text-sm text-gray-500">Client → Server：请求撤回（删除）已上传的素材记录</p>
+            <CodeBlock code={assetRecallTopic} language="text" />
+            <CodeBlock code={assetRecallPayload} language="json" />
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-semibold text-gray-700">Asset Recall Complete</h4>
+            <p className="text-sm text-gray-500">Server → Client：撤回处理结果回执</p>
+            <CodeBlock code={assetRecallCompleteTopic} language="text" />
+            <CodeBlock code={assetRecallCompletePayload} language="json" />
+          </div>
+        </div>
+      </div>
+
       <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
         <p className="font-bold text-yellow-800 mb-2">重要说明</p>
         <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
           <li>所有消息必须携带 <code className="bg-yellow-100 px-1 rounded">type</code> 字段标识消息类型</li>
           <li><code className="bg-yellow-100 px-1 rounded">session_id</code> 为 u32 类型，在 JSON 中以字符串形式传输，由 Server 生成</li>
+          <li><code className="bg-yellow-100 px-1 rounded">file_hash</code> 一律为 Blake3 哈希的 64 字符十六进制串</li>
           <li>Client 发送 upload_start 时 session_id 可为空</li>
           <li>未识别的消息类型必须忽略，保持幂等性</li>
           <li>Client 仅发布 <code className="bg-yellow-100 px-1 rounded">{'/jiayi/fsp/client/{client_id}/#'}</code>，订阅 <code className="bg-yellow-100 px-1 rounded">{'/jiayi/fsp/server/{client_id}/#'}</code></li>
-          <li>Server 订阅 <code className="bg-yellow-100 px-1 rounded">/jiayi/fsp/client/+</code>，发布 <code className="bg-yellow-100 px-1 rounded">{'/jiayi/fsp/server/{client_id}/#'}</code></li>
+          <li>Server 订阅 <code className="bg-yellow-100 px-1 rounded">/jiayi/fsp/client/+/#</code>，发布 <code className="bg-yellow-100 px-1 rounded">{'/jiayi/fsp/server/{client_id}/#'}</code>（Topic 固定 5 层）</li>
         </ul>
       </div>
     </div>
