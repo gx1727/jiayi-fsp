@@ -21,6 +21,22 @@ designed for trusted local networks.
 - Background mobile transfer
 - Untrusted peer-to-peer networks
 
+## Repository Structure
+
+This repository is dedicated to the **protocol itself** — specification,
+reference implementation and developer tooling. End-user product applications
+are out of scope.
+
+```
+proto/        Protocol data structures (C / Rust)
+docs/spec/    Normative specification — single source of truth
+docs/         GitHub Pages deployment (spec + protocol website build)
+doc/          Single-file consolidated specification
+examples/     Broker ACL and reference implementation examples
+tools/        Debugging tools (packet inspector / bitmap visualizer / replay simulator)
+site/         Protocol website source
+```
+
 ## Documentation Quick Links
 
  - [Overview](docs/spec/00-overview.md)

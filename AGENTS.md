@@ -1,5 +1,19 @@
 # AGENTS.md
 
+## Repository Layout
+
+本仓库专注于 **JIAYI-FSP 协议本身**（规范、参考实现、开发者工具），不包含终端用户产品应用。
+
+```
+proto/        协议数据结构定义（C / Rust）
+docs/spec/    规范性文档——唯一事实来源
+docs/         GitHub Pages 部署目录（规范 + 协议官网构建产物）
+doc/          单文件版规范合集
+examples/     Broker ACL 与参考实现示例
+tools/        调试工具集（包检视 / 位图可视化 / 重放模拟器）
+site/         协议官网源码
+```
+
 ## Build, Lint, and Test Commands
 
 ### Frontend Site (site/)
@@ -25,8 +39,8 @@ pnpm lint
 # 预览构建结果
 pnpm preview
 
-# 部署到 GitHub Pages
-pnpm predeploy && pnpm deploy
+# 部署到 GitHub Pages（产物需同步到仓库根的 docs/ 目录）
+pnpm build && rsync -a --delete dist/ ../docs/
 ```
 
 ## Code Style Guidelines
