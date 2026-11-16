@@ -1,3 +1,15 @@
+# OS files
+.DS_Store
+Thumbs.db
 
-/jiayi-fsp_bak/
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
 
+# Build artifacts
+site/dist/
+
+# Dependencies
+node_modules/
