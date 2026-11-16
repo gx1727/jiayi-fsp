@@ -1,0 +1,29 @@
+name: Spec Consistency
+
+# 单一事实来源校验：
+#   docs/spec/          ← 规范源文件（唯一事实来源）
+#   doc/*-协议规范合集.md ← 由 tools/build-spec-compilation.py 自动生成
+#
+# 本工作流确保合集不会与源文件漂移。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 校验协议合集与 docs/spec/ 一致
+        run: python3 tools/build-spec-compilation.py --check
+
+      - name: 校验规范内部一致性
+        run: python3 tools/check-spec-consistency.py
