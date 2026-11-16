@@ -7,7 +7,10 @@ designed for trusted local networks.
 - Control Plane: MQTT
 - Data Plane: UDP
 
-⚠️ Status: Experimental (v0.1)
+✅ Status: v1.0.0 (Production Ready)
+
+This release aligns the specification with the reference implementation
+`jiayi-fsp-core` 0.2.0 / `jiayi-client` 1.0.0.
 
 ## Goals
 
@@ -31,10 +34,21 @@ are out of scope.
 proto/        Protocol data structures (C / Rust)
 docs/spec/    Normative specification — single source of truth
 docs/         GitHub Pages deployment (spec + protocol website build)
-doc/          Single-file consolidated specification
+doc/          Single-file consolidated specification (generated, do not edit)
 examples/     Broker ACL and reference implementation examples
-tools/        Debugging tools (packet inspector / bitmap visualizer / replay simulator)
+tools/        Spec tooling (compilation generator / consistency checker) + debug tools
 site/         Protocol website source
+```
+
+### Specification Workflow
+
+`docs/spec/` is the single source of truth. The consolidated document under `doc/`
+is **generated** — never edit it by hand.
+
+```bash
+python3 tools/build-spec-compilation.py           # regenerate the compilation
+python3 tools/check-spec-consistency.py           # endianness / types / topics / proto alignment
+python3 tools/build-spec-compilation.py --check   # CI mode
 ```
 
 ## Documentation Quick Links

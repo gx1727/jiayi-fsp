@@ -5,7 +5,9 @@ JIAYI File Sync Protocol（JIAYI-FSP）是一种为可信局域网设计的混�
 - 控制平面：MQTT
 - 数据平面：UDP
 
-状态：实验性（v0.1）
+状态：**v1.0.0（生产可用）**
+
+本版本与参考实现 `jiayi-fsp-core` 0.2.0 / `jiayi-client` 1.0.0 对齐。
 
 ## 项目目标
 
@@ -27,10 +29,20 @@ JIAYI File Sync Protocol（JIAYI-FSP）是一种为可信局域网设计的混�
 proto/        协议数据结构定义（C / Rust）
 docs/spec/    规范性文档——唯一事实来源
 docs/         GitHub Pages 部署目录（规范 + 协议官网构建产物）
-doc/          单文件版规范合集
+doc/          单文件版规范合集（自动生成，勿手改）
 examples/     Broker ACL 与参考实现示例
-tools/        调试工具集（包检视 / 位图可视化 / 重放模拟器）
+tools/        规范工具（合集生成器 / 一致性检查器）+ 调试工具集
 site/         协议官网源码
+```
+
+### 规范工作流
+
+`docs/spec/` 是唯一事实来源；`doc/` 下的合集是**自动生成产物**，请勿手动编辑。
+
+```bash
+python3 tools/build-spec-compilation.py           # 重新生成单文件合集
+python3 tools/check-spec-consistency.py           # 端序 / 类型 / Topic / proto 对齐检查
+python3 tools/build-spec-compilation.py --check   # CI 校验模式
 ```
 
 ## 架构概览

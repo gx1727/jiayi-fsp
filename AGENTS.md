@@ -8,11 +8,29 @@
 proto/        协议数据结构定义（C / Rust）
 docs/spec/    规范性文档——唯一事实来源
 docs/         GitHub Pages 部署目录（规范 + 协议官网构建产物）
-doc/          单文件版规范合集
+doc/          单文件版规范合集（由 tools/ 自动生成，勿手改）
 examples/     Broker ACL 与参考实现示例
-tools/        调试工具集（包检视 / 位图可视化 / 重放模拟器）
+tools/        规范工具（合集生成 / 一致性检查）+ 调试工具集
 site/         协议官网源码
 ```
+
+## Specification Workflow
+
+规范变更的固定流程，**`docs/spec/` 是唯一事实来源**：
+
+```bash
+# 1. 修改 docs/spec/ 下的分章节规范
+# 2. 重新生成单文件合集（doc/ 下的合集是产物，不要手动编辑）
+python3 tools/build-spec-compilation.py
+
+# 3. 跑一致性检查（端序 / session_id / file_hash / Topic 层级 / proto 对齐 / 版本号）
+python3 tools/check-spec-consistency.py
+
+# 4. 校验模式（CI 用）：合集与源文件不一致时退出码为 1
+python3 tools/build-spec-compilation.py --check
+```
+
+CI（`.github/workflows/spec-check.yml`）会强制执行第 3、4 步。
 
 ## Build, Lint, and Test Commands
 
@@ -183,9 +201,11 @@ export function cn(...inputs: ClassValue[]) {
 
 ### Documentation
 
-- 协议变更需同步更新 docs/spec 目录下的规范文档
+- 协议变更**只需**修改 `docs/spec/` 目录下的分章节规范，随后运行 `tools/build-spec-compilation.py` 重新生成合集
+- `doc/` 下的单文件合集是**生成产物**，禁止手动编辑
 - 非规范性的说明需明确标注
 - 示例代码必须严格遵循协议规范
+- 协议字段/类型/Topic 变更后，必须通过 `tools/check-spec-consistency.py`
 
 ### State Management
 

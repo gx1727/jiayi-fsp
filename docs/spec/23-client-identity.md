@@ -7,6 +7,8 @@
 ## 生成
 
 - base32(UUIDv4) 或 hash(device_uuid+salt)，持久化安全存储，不得重启重生成
+- client_id 与文件哈希（Blake3）**无关**，两者不可互相推导
+- client_id 一旦分配即固定，不得因设备重装、换网或升级而改变
 
 ## 生命周期与存储
 
