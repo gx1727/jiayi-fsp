@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, UploadCloud, Images, Wifi, CheckCircle2, AlertTriangle, CloudOff, Smartphone, HardDrive, Menu, X, Download, Apple, Monitor } from "lucide-react";
+import { ShieldCheck, UploadCloud, Images, Wifi, CheckCircle2, AlertTriangle, CloudOff, Smartphone, HardDrive, Menu, X, Download, Apple, Monitor, MessageCircle } from "lucide-react";
 
 const Section = ({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) => (
   <section id={id} className="max-w-6xl mx-auto px-6 py-16">
@@ -11,14 +11,9 @@ const Section = ({ id, title, children }: { id?: string; title: string; children
 
 const NAV_LINKS = [
   { href: "#intro", label: "介绍" },
-  { href: "#why", label: "为什么" },
-  { href: "#solution", label: "方案" },
-  { href: "#steps", label: "使用步骤" },
   { href: "/app-guide", label: "使用手册" },
-  { href: "#compare", label: "对比" },
-  { href: "#audience", label: "适用人群" },
-  { href: "#security", label: "隐私" },
   { href: "https://gx1727.github.io/jiayi-fsp/", label: "JIAYI-FSP" },
+  { href: "#contact", label: "联系我们" },
 ];
 
 export function App() {
@@ -300,7 +295,7 @@ export function App() {
               <p className="text-gray-600 mb-6">手机端 APP，用于拍照、管理和同步照片到家庭服务器。</p>
               <div className="space-y-3">
                 <a
-                  href="https://github.com/gx1727/jiayi-fsp/releases/download/v0.1.0/app-release.apk"
+                  href="https://jiayi.gx1727.com/app-release.apk"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-brand-blue to-brand-purple text-white shadow-soft hover:opacity-90 transition-opacity"
@@ -335,7 +330,7 @@ export function App() {
               <p className="text-gray-600 mb-6">运行在家庭电脑上的后台服务，接收并管理所有同步的照片。</p>
               <div className="space-y-3">
                 <a
-                  href="https://github.com/gx1727/jiayi-fsp/releases/download/v0.1.0/JIAYI_0.1.0_x64-setup.exe"
+                  href="https://jiayi.gx1727.com/JIAYI-setup.exe"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-brand-blue to-brand-purple text-white shadow-soft hover:opacity-90 transition-opacity"
@@ -370,6 +365,23 @@ export function App() {
             </div>
           </div>
           <p className="mt-6 text-gray-700">把家人的照片，安心地留在家里。</p>
+        </Section>
+
+        <Section id="contact" title="联系我们">
+          <div className="flex flex-col items-center gap-6">
+            <div className="p-6 rounded-2xl bg-white shadow-soft border border-gray-100 text-center">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <MessageCircle className="h-5 w-5 text-brand-blue" />
+                <h3 className="text-lg font-semibold text-gray-900">微信扫码联系我们</h3>
+              </div>
+              <img
+                src={`https://jiayi.gx1727.com/qrcode.png?${useMemo(() => Math.random(), [])}`}
+                alt="联系我们"
+                className="w-48 h-48 mx-auto rounded-lg border border-gray-200"
+              />
+              <p className="mt-4 text-sm text-gray-500">扫描二维码，获取更多帮助与支持</p>
+            </div>
+          </div>
         </Section>
       </main>
 

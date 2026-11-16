@@ -57,9 +57,12 @@ export default function AppGuide() {
             <img src="/logo.png" alt="家忆 · JIAYI" className="h-8 w-8 rounded" />
             <span className="text-xl font-semibold text-gray-900">家忆 · JIAYI</span>
           </div>
-          <nav className="hidden md:flex items-center gap-4 text-sm text-gray-700">
-            <a href="/" className="hover:text-brand-blue">首页</a>
+          <nav className="hidden md:flex items-center gap-6 text-gray-700">
+            <a href="/" className="hover:text-brand-blue">介绍</a>
             <a href="/app-guide" className="text-brand-blue font-medium">使用手册</a>
+            <a href="https://gx1727.github.io/jiayi-fsp/" className="hover:text-brand-blue">JIAYI-FSP</a>
+            <a href="/#contact" className="hover:text-brand-blue">联系我们</a>
+            <a href="/#cta" className="px-3 py-1.5 rounded bg-gradient-to-r from-brand-blue to-brand-purple text-white">下载</a>
           </nav>
           <button
             className="md:hidden p-2 text-gray-700"
@@ -70,9 +73,12 @@ export default function AppGuide() {
           </button>
         </div>
         {menuOpen && (
-          <nav className="md:hidden px-6 pb-4 flex flex-col gap-3 text-sm text-gray-700 border-t border-gray-200">
-            <a href="/" onClick={() => setMenuOpen(false)} className="py-1">首页</a>
+          <nav className="md:hidden px-6 pb-4 flex flex-col gap-3 text-gray-700 border-t border-gray-200">
+            <a href="/" onClick={() => setMenuOpen(false)} className="py-1">介绍</a>
             <a href="/app-guide" onClick={() => setMenuOpen(false)} className="py-1 text-brand-blue font-medium">使用手册</a>
+            <a href="https://gx1727.github.io/jiayi-fsp/" onClick={() => setMenuOpen(false)} className="py-1">JIAYI-FSP</a>
+            <a href="/#contact" onClick={() => setMenuOpen(false)} className="py-1">联系我们</a>
+            <a href="/#cta" onClick={() => setMenuOpen(false)} className="py-2 text-center rounded bg-gradient-to-r from-brand-blue to-brand-purple text-white">下载</a>
           </nav>
         )}
       </header>
