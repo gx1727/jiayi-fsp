@@ -92,6 +92,13 @@
 - **22 非法行为**：移除「COMPLETED 状态处理 missing_chunks」——
   该条会抵消 12 章保底轮询「防止因 MQTT 消息丢失导致状态机死锁」的目的；
   改为明确「COMPLETED 状态下接收方**必须**应答 `mode=request`」。
+- **10 状态机双视角可达性**：转移表原先只有**发送侧**的 `NEGOTIATING → TRANSFERRING`。
+  接收侧因此只能从 `NEGOTIATING` 直接跳到 `VERIFY`（秒传路径），
+  常规传输的 `TRANSFERRING → VERIFY`（位图全真）在接收侧**不可达** ——
+  接收侧会在整个传输期间停留在 `NEGOTIATING`。
+  本版本补充接收侧的 `NEGOTIATING → TRANSFERRING`，并新增
+  「每个视角都必须能从 INIT 走到 COMPLETED」的规范要求与自动检查。
+  该缺口由参考实现的 `每个视角都能走到_completed` 断言发现。
 - **10 `session_pause`**：此前在状态机中完全缺席（无状态、无转移、无 ack），
   新增 `PAUSED` 状态与 `TRANSFERRING ⇄ PAUSED` 转移。
 - **20 数据面安全**：补充源地址校验、加密不得改变 chunk 边界与偏移映射的约束。
@@ -99,7 +106,7 @@
 
 ### 工程
 
-- **tools/check-spec-consistency.py**：由 6 项检查扩展到 16 项，新增
+- **tools/check-spec-consistency.py**：由 6 项检查扩展到 17 项，新增
   「消息清单三方交叉（06 / 22 / 99 的名称与方向）」、
   「消息载荷 type 与消息表对齐」、
   「状态机转移引用的消息必须存在 + 会话类消息必须出现在状态机中」、
@@ -110,7 +117,8 @@
   「next_chunk_id 必须是『第一个尚未收到的块』」、
   「window 默认值在各章一致」、
   「引用块规范性守卫：规范性『必须/不得/应当』必须写在正文，
-  引用块仅用于历史变更说明」。
+  引用块仅用于历史变更说明」、
+  「状态机双视角可达性：每个视角都必须能从 INIT 走到 COMPLETED」。
   - 新增的每一项守卫都经过**负向测试**：人为改坏规范后必须报错，改回后必须通过。
 - **21 ACL**：修正 `+/+` 笔误为规范写法 `/jiayi/fsp/client/+/#`；补充 QoS / 持久会话 / 遗嘱说明。
 - **proto/**：补注 CRC32 变体（CRC-32/ISO-HDLC）与覆盖区间。
@@ -128,8 +136,14 @@
     8 个规范场景：零丢包不卡死、空洞块补发、裁决丢失时主动索要、
     重复报文幂等、CRC32 损坏丢弃、大文件缺失分批、续传起点、秒传不发数据。
   - `server` / `client`：真实 UDP 回环示例，已验证传输结果与源文件**逐字节一致**。
-  - 共 27 个核心单测 + 9 个一致性场景；CI 新增 `conformance` 作业。
-  - 未覆盖部分（诚实列出）：MQTT 传输层、Blake3、TCP 降级、下载方向端到端场景。
+  - **双向仿真**：`World` 区分会话方向，方向决定角色 ——
+    上传方向 Client 发送 / Server 接收；下载方向 Server 发送 / Client 接收。
+    无论哪个方向，发起会话的都是 Client，**发布完成消息的都是接收侧**。
+  - 共 29 个核心单测 + 14 个一致性场景；CI 新增 `conformance` 作业。
+  - 新增的下载方向场景：端到端完成（钉住「Client 发布 `download_complete`」）、
+    空洞补发（接收方为 Client）、`download_accept` 字段完整性、
+    数据发到错误端点必须丢弃。
+  - 未覆盖部分（诚实列出）：MQTT 传输层、Blake3、TCP 降级。
 - **官网部署改为 gh-pages 分支**：构建产物（`docs/assets/` 等带 hash 的文件）
   不再提交到 `main` —— 否则每次改官网都产生上百个文件的 diff 噪音。
   - 新增 `site/scripts/copy-spec.mjs`：把 `docs/spec/` 与 `docs/diagrams/`

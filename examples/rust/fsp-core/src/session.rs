@@ -143,6 +143,8 @@ pub const LEGAL_TRANSITIONS: &[Transition] = &[
     Transition { from: SessionState::Init, to: SessionState::Negotiating, views: BOTH, trigger: Trigger::Start },
     Transition { from: SessionState::Init, to: SessionState::Aborted, views: BOTH, trigger: Trigger::Abort },
     Transition { from: SessionState::Negotiating, to: SessionState::Transferring, views: SENDER, trigger: Trigger::Accept },
+    // 接收侧同样需要这一行：否则常规传输的「位图全真 → VERIFY」在接收侧不可达。
+    Transition { from: SessionState::Negotiating, to: SessionState::Transferring, views: RECEIVER, trigger: Trigger::Accept },
     Transition { from: SessionState::Negotiating, to: SessionState::Verify, views: RECEIVER, trigger: Trigger::InstantUpload },
     Transition { from: SessionState::Negotiating, to: SessionState::Completed, views: SENDER, trigger: Trigger::InstantUpload },
     Transition { from: SessionState::Negotiating, to: SessionState::Aborted, views: BOTH, trigger: Trigger::Abort },
@@ -347,6 +349,70 @@ mod tests {
             s.transition(SessionState::Completed, SessionView::Sender),
             Err(TransitionError::Illegal { .. })
         ));
+    }
+
+    /// 每个视角从 INIT 都必须能走到 COMPLETED（否则该视角的会话永远无法完成）。
+    ///
+    /// 这条断言曾暴露一个真实的规范缺口：接收侧缺少
+    /// `NEGOTIATING → TRANSFERRING`，导致 `TRANSFERRING → VERIFY`（位图全真）
+    /// 在接收侧**不可达**。
+    fn 可达状态(view: SessionView) -> Vec<SessionState> {
+        let all = [
+            SessionState::Init,
+            SessionState::Negotiating,
+            SessionState::Transferring,
+            SessionState::Paused,
+            SessionState::Verify,
+            SessionState::Commit,
+            SessionState::Completed,
+            SessionState::Aborted,
+        ];
+        let mut reachable = vec![SessionState::Init];
+        loop {
+            let mut grew = false;
+            for t in LEGAL_TRANSITIONS
+                .iter()
+                .filter(|t| t.views.contains(&view))
+            {
+                if reachable.contains(&t.from) && !reachable.contains(&t.to) {
+                    reachable.push(t.to);
+                    grew = true;
+                }
+            }
+            if !grew {
+                break;
+            }
+        }
+        let _ = all;
+        reachable
+    }
+
+    #[test]
+    fn 每个视角都能走到_completed() {
+        for view in [SessionView::Sender, SessionView::Receiver] {
+            let reachable = 可达状态(view);
+            assert!(
+                reachable.contains(&SessionState::Completed),
+                "{view:?} 视角无法从 INIT 到达 COMPLETED；可达状态 = {:?}",
+                reachable.iter().map(|s| s.as_str()).collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn 接收侧必须能进入_transferring() {
+        // 常规传输路径：接收侧必须能从 NEGOTIATING 进入 TRANSFERRING，
+        // 否则 `TRANSFERRING → VERIFY`（位图全真）在接收侧不可达。
+        assert!(
+            is_legal(SessionState::Negotiating, SessionState::Transferring, SessionView::Receiver),
+            "接收侧缺少 NEGOTIATING → TRANSFERRING（10 章转移表缺口）"
+        );
+        let reachable = 可达状态(SessionView::Receiver);
+        assert!(
+            reachable.contains(&SessionState::Verify),
+            "接收侧必须能到达 VERIFY（可达状态 = {:?}）",
+            reachable.iter().map(|s| s.as_str()).collect::<Vec<_>>()
+        );
     }
 
     #[test]

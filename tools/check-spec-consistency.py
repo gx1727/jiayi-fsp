@@ -20,6 +20,7 @@
    14. resume 语义守卫：next_chunk_id 必须是「第一个尚未收到的块」
    15. window 默认值在各章必须一致
    16. 引用块规范性守卫：规范性要求必须写在正文，引用块仅用于历史说明
+   17. 状态机双视角可达性：每个视角都必须能从 INIT 走到 COMPLETED
 
 退出码:
     0  全部通过
@@ -551,6 +552,67 @@ def check_quote_blocks() -> None:
                 block = []
 
 
+# ------------------------------------------- 17. 状态机覆盖（双视角可达性）
+def check_state_machine_coverage() -> None:
+    """10 章的转移表必须让**每个视角**都能从 INIT 走到 COMPLETED。
+
+    这条断言曾暴露一个真实缺口：转移表只有发送侧的
+    `NEGOTIATING → TRANSFERRING`，接收侧因此无法常规进入 TRANSFERRING，
+    使 `TRANSFERRING → VERIFY`（位图全真）在接收侧不可达。
+    """
+    s10 = spec("10-state-machine.md")
+    if not s10:
+        return
+    body = _section(s10, "## 合法状态转移", "## ")
+
+    edges: dict[str, set[tuple[str, str]]] = {}
+    for line in body.split("\n"):
+        if not line.strip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        frm, to, view = cells[0], cells[1], cells[2]
+        if not (re.fullmatch(r"[A-Z_]+", frm) and re.fullmatch(r"[A-Z_]+", to)):
+            continue
+        scope = ["发送侧", "接收侧"] if "双方" in view else [view]
+        for v in scope:
+            if v not in ("发送侧", "接收侧"):
+                continue
+            edges.setdefault(v, set()).add((frm, to))
+
+    terminals = {"COMPLETED"}
+    start = "INIT"
+    for view in ("发送侧", "接收侧"):
+        seen = {start}
+        changed = True
+        while changed:
+            changed = False
+            for frm, to in edges.get(view, set()):
+                if frm in seen and to not in seen:
+                    seen.add(to)
+                    changed = True
+        if not (seen & terminals):
+            errors.append(
+                f"[状态机] {view} 无法从 INIT 到达 COMPLETED；"
+                f"可达状态 = {sorted(seen)}（转移表缺少该视角的路径）"
+            )
+        if view == "接收侧":
+            if ("NEGOTIATING", "TRANSFERRING") not in edges.get(view, set()):
+                errors.append(
+                    "[状态机] 接收侧缺少 NEGOTIATING → TRANSFERRING；"
+                    "否则 TRANSFERRING → VERIFY（位图全真）在接收侧不可达"
+                )
+            if ("VERIFY", "COMMIT") not in edges.get(view, set()):
+                errors.append("[状态机] 接收侧缺少 VERIFY → COMMIT")
+            if ("COMMIT", "COMPLETED") not in edges.get(view, set()):
+                errors.append("[状态机] 接收侧缺少 COMMIT → COMPLETED")
+    notes.append(
+        "状态机双视角可达性: "
+        + "，".join(f"{v}={len(edges.get(v, set()))} 条边" for v in ("发送侧", "接收侧"))
+    )
+
+
 def main() -> int:
     for fn in (
         check_endianness,
@@ -569,6 +631,7 @@ def main() -> int:
         check_resume_semantics,
         check_window_default,
         check_quote_blocks,
+        check_state_machine_coverage,
     ):
         fn()
 

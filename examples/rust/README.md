@@ -55,6 +55,25 @@ cmp /tmp/in.bin /tmp/out.bin && echo "逐字节一致"
 | 大文件缺失分批 | 18 章 | 单条载荷**不得超过 4096 条**，`missing_count` 给出总数 |
 | 断点续传起点 | 13 章 | `next_chunk_id` **必须**是第一个缺失块，**不得**是 `max_received_id + 1` |
 | 秒传不发数据 | 10 章 | `file_exists = true` 时**不得**发送任何数据 |
+| **下载方向端到端** | 06 / 14 章 | 接收方是 Client，**必须由 Client 发布 `download_complete`** |
+| **下载方向空洞补发** | 12 / 18 章 | 下载方向的缺失裁决由 Client 下发，空洞块由 Server 补发 |
+| **下载 accept 字段完整** | 06 章 | `download_accept` 必须带 `udp_port` 与 `chunk_size` |
+
+## 双向仿真
+
+`World` 区分**会话方向**，方向决定角色（09 章 `direction`）：
+
+| direction | 发送侧 | 接收侧 | 完成消息 |
+|-----------|--------|--------|----------|
+| `upload`   | Client | Server | `upload_complete`（Server 发布） |
+| `download` | Server | Client | `download_complete`（Client 发布） |
+
+无论哪个方向，**发起会话的都是 Client**（`upload_start` / `download_start`），
+**发布完成消息的都是接收侧**。
+
+```bash
+cargo run -p fsp-sim 下载   # 只跑下载方向的场景
+```
 
 ## 值得注意的实现细节
 
@@ -70,6 +89,10 @@ cmp /tmp/in.bin /tmp/out.bin && echo "逐字节一致"
   （重传不受此限）」。若把重传也挡在上限外，在途量已满时缺失块永远补不回来。
 - **确定性**：丢包 / 乱序 / 重复由带种子的 PRNG 决定，同一场景永远同一结果。
   故障注入只作用于**首次**出现 —— 否则被丢的块永远补不回来。
+- **每个视角都必须可达**：`fsp-core` 的 `每个视角都能走到_completed` 断言检查
+  转移表对发送侧 / 接收侧**各自**是否连通。该断言曾暴露一个真实缺口 ——
+  转移表只有发送侧的 `NEGOTIATING → TRANSFERRING`，导致
+  `TRANSFERRING → VERIFY`（位图全真）在接收侧不可达。
 
 ## 未覆盖的部分
 
@@ -81,8 +104,6 @@ cmp /tmp/in.bin /tmp/out.bin && echo "逐字节一致"
 - **Blake3**：仿真用 FNV-1a 摘要代替（只表达「在 VERIFY 阶段校验文件内容」
   这一**协议行为**）。生产实现必须用 Blake3。
 - **TCP 降级**：线路格式在规范 v1.1.0 中仍未定义（见 ROADMAP v1.2）。
-- **下载方向**：仿真只实现了上传方向（Client→Server）的完整流程；
-  下载方向的状态机与消息已建模，但未做端到端场景。
 - **文件级持久化**：位图落盘 API 已实现（`save_to_file` / `load_from_file`），
   但会话元数据的持久化未实现。
 - **并发**：单会话、单文件。

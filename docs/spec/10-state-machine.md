@@ -51,6 +51,7 @@ INIT → NEGOTIATING → TRANSFERRING → VERIFY → COMMIT → COMPLETED
 | INIT | NEGOTIATING | 接收侧 | upload_start / download_start（收到传输请求） |
 | INIT | ABORTED | 双方 | session_abort |
 | NEGOTIATING | TRANSFERRING | 发送侧 | upload_accept / download_accept |
+| NEGOTIATING | TRANSFERRING | 接收侧 | upload_accept / download_accept（发送 accept 后进入常规传输） |
 | NEGOTIATING | VERIFY | 接收侧 | 秒传：accept 携带 file_exists=true，跳过数据传输 |
 | NEGOTIATING | COMPLETED | 发送侧 | 秒传：accept 携带 file_exists=true，不发送任何数据 |
 | NEGOTIATING | ABORTED | 双方 | session_abort |
@@ -68,6 +69,16 @@ INIT → NEGOTIATING → TRANSFERRING → VERIFY → COMMIT → COMPLETED
 **ABORTED 是终态（规范性）**：没有出边，也不存在 `ABORTED → ABORTED`。
 清理动作（删除临时文件 / 位图 / 元数据）在进入 ABORTED 之后执行
 （见 09 章「超时与回收」、13 章「失败与清理」）。
+
+**每个视角都必须能从 INIT 走到 COMPLETED（规范性）**：转移表必须对**两个视角**
+都给出完整路径。接收侧同样需要 `NEGOTIATING → TRANSFERRING` ——
+否则它只能从 `NEGOTIATING` 直接跳到 `VERIFY`（秒传路径），
+常规传输的「位图全真 → VERIFY」在接收侧**不可达**。
+
+> v1.1.0 初稿的转移表只有发送侧的 `NEGOTIATING → TRANSFERRING`。
+> 该缺口会让接收侧在正常传输期间停留在 `NEGOTIATING`，
+> 使 `TRANSFERRING → VERIFY` 无法合法触发。
+> `fsp-core` 的 `每个视角都能走到_completed` 断言固化了这条要求。
 
 **两个视角的状态序列不同（规范性）**：接收侧经过 VERIFY / COMMIT，发送侧不经过
 （发送侧没有位图，无法做文件级校验）。把两侧日志对齐时，

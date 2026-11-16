@@ -67,11 +67,21 @@ pub struct SenderAgent {
     pub send_counts: Vec<u32>,
     /// 收到的 `resume_ack`（用于断言续传起点）。
     pub resume_acks: Vec<(u32, u32)>,
+    /// 会话方向（决定自己是 Client 还是 Server）。
+    pub direction: Direction,
+    /// 收到的完成消息类型，用于断言「完成消息由接收方发布、发送方只接收」。
+    pub complete_seen: Vec<&'static str>,
 }
 
 impl SenderAgent {
     /// 新建发送侧代理。
-    pub fn new(client_id: impl Into<String>, file: Vec<u8>, chunk_size: u32, window: u32) -> Self {
+    pub fn new(
+        client_id: impl Into<String>,
+        file: Vec<u8>,
+        chunk_size: u32,
+        window: u32,
+        direction: Direction,
+    ) -> Self {
         let chunk_count = if chunk_size == 0 {
             0
         } else {
@@ -97,11 +107,22 @@ impl SenderAgent {
             datagrams_sent: 0,
             send_counts: Vec::new(),
             resume_acks: Vec::new(),
+            direction,
+            complete_seen: Vec::new(),
         }
     }
 
-    /// 发起上传（`upload_start`）。
-    pub fn start(&mut self, sim: &mut Sim) {
+    /// 发送侧的「对端」端点 —— 即接收侧所在端点。
+    fn peer(&self) -> Endpoint {
+        match self.direction {
+            Direction::Upload => Endpoint::Server,
+            Direction::Download => Endpoint::Client,
+        }
+    }
+
+    /// 发起上传（`upload_start`）—— 仅上传方向，Client 是发送侧。
+    pub fn start_upload(&mut self, sim: &mut Sim) {
+        debug_assert_eq!(self.direction, Direction::Upload);
         let file_hash = format!("{:016x}", digest(&self.file));
         let msg = ControlMessage::UploadStart {
             session_id: None,
@@ -112,7 +133,7 @@ impl SenderAgent {
             chunk_size: self.chunk_size,
         };
         self.state = SessionState::Negotiating;
-        sim.post_control(Endpoint::Server, msg);
+        sim.post_control(self.peer(), msg);
     }
 
     /// 处理收到的控制消息。
@@ -153,9 +174,38 @@ impl SenderAgent {
                         missing_count: Some(0),
                         chunks: Vec::new(),
                     };
-                    sim.post_control(Endpoint::Server, reply);
+                    sim.post_control(self.peer(), reply);
                 }
             },
+            ControlMessage::DownloadStart {
+                file_hash,
+                size,
+                chunk_size,
+                ..
+            } => {
+                // 下载方向：发送侧（Server）收到 download_start 后回 download_accept。
+                // 必须携带 udp_port 与 chunk_size —— 缺端口数据通路无法建立，
+                // 缺 chunk_size 接收方无法核算 chunk_count（06 章 accept 对称性）。
+                debug_assert_eq!(self.direction, Direction::Download);
+                self.chunk_size = *chunk_size;
+                self.chunk_count = self.chunk_count_for(*chunk_size);
+                let session_id = SessionId(1);
+                self.session_id = Some(session_id);
+                self.flow = FlowController::new(self.flow.window);
+                self.state = SessionState::Transferring;
+                let accept = ControlMessage::DownloadAccept {
+                    file_hash: file_hash.clone(),
+                    session_id,
+                    chunk_count: self.chunk_count,
+                    window: self.flow.window,
+                    udp_port: 5000,
+                    tcp_port: 0,
+                    chunk_size: *chunk_size,
+                };
+                let _ = size;
+                sim.post_control(self.peer(), accept);
+                sim.schedule_now(Event::ClientSendBatch);
+            }
             ControlMessage::ResumeAck { next_chunk_id, missing_count, .. } => {
                 // 续传：顺序发送流从 next_chunk_id 继续（13 章）
                 self.resume_acks.push((*next_chunk_id, *missing_count));
@@ -164,7 +214,13 @@ impl SenderAgent {
                 self.state = SessionState::Transferring;
                 sim.schedule_now(Event::ClientSendBatch);
             }
-            ControlMessage::UploadComplete { .. } | ControlMessage::DownloadComplete { .. } => {
+            ControlMessage::UploadComplete { .. } => {
+                self.complete_seen.push("upload_complete");
+                self.completed = true;
+                self.state = SessionState::Completed;
+            }
+            ControlMessage::DownloadComplete { .. } => {
+                self.complete_seen.push("download_complete");
                 self.completed = true;
                 self.state = SessionState::Completed;
             }
@@ -230,7 +286,7 @@ impl SenderAgent {
             };
             self.requests_sent += 1;
             self.last_verdict_at_us = sim.now_us;
-            sim.post_control(Endpoint::Server, msg);
+            sim.post_control(self.peer(), msg);
         }
 
         let burst = self.flow.burst_size as usize;
@@ -292,7 +348,7 @@ impl SenderAgent {
             self.send_counts.resize(chunk_id as usize + 1, 0);
         }
         self.send_counts[chunk_id as usize] += 1;
-        sim.post_datagram(Endpoint::Server, pkt.encode());
+        sim.post_datagram(self.peer(), pkt.encode());
     }
 }
 
@@ -327,11 +383,15 @@ pub struct ReceiverAgent {
     pub window: u32,
     /// 是否走秒传路径（`file_exists = true`）。
     pub instant_upload: bool,
+    /// 会话方向（决定自己是 Server 还是 Client）。
+    pub direction: Direction,
+    /// 发布的完成消息类型（用于断言「完成消息由接收方发布」）。
+    pub complete_published: Vec<&'static str>,
 }
 
 impl ReceiverAgent {
     /// 新建接收侧代理；`expected` 是期望收到的文件内容。
-    pub fn new(expected: Vec<u8>) -> Self {
+    pub fn new(expected: Vec<u8>, direction: Direction) -> Self {
         Self {
             session: None,
             buffer: vec![0u8; expected.len()],
@@ -347,7 +407,57 @@ impl ReceiverAgent {
             next_session_id: 1,
             window: fsp_core::packet::DEFAULT_WINDOW,
             instant_upload: false,
+            direction,
+            complete_published: Vec::new(),
         }
+    }
+
+    /// 接收侧的「对端」端点 —— 即发送侧所在端点。
+    fn peer(&self) -> Endpoint {
+        match self.direction {
+            Direction::Upload => Endpoint::Client,
+            Direction::Download => Endpoint::Server,
+        }
+    }
+
+    /// 接收侧要发布的完成消息（**完成消息一律由接收方发布**，见 06 章）。
+    ///
+    /// 做成关联函数而非方法，避免与 `&mut self.session` 的借用冲突。
+    fn complete_for(
+        direction: Direction,
+        session_id: SessionId,
+        file_hash: String,
+    ) -> ControlMessage {
+        match direction {
+            Direction::Upload => ControlMessage::UploadComplete {
+                session_id,
+                result: ResultKind::Success,
+                code: None,
+                file_hash: Some(file_hash),
+                asset_id: Some("asset-1".into()),
+            },
+            Direction::Download => ControlMessage::DownloadComplete {
+                session_id,
+                result: ResultKind::Success,
+                code: None,
+                file_hash: Some(file_hash),
+            },
+        }
+    }
+
+    /// 发起下载（`download_start`）—— 仅下载方向，Client 是接收侧。
+    pub fn start_download(&mut self, sim: &mut Sim) {
+        debug_assert_eq!(self.direction, Direction::Download);
+        let file_hash = format!("{:016x}", self.expected_digest);
+        let msg = ControlMessage::DownloadStart {
+            session_id: None,
+            file_hash,
+            file_name: "sample.bin".into(),
+            size: self.buffer.len() as u64,
+            chunk_size: fsp_core::packet::DEFAULT_CHUNK_SIZE,
+        };
+        self.session = None;
+        sim.post_control(self.peer(), msg);
     }
 
     /// 处理收到的控制消息。
@@ -390,7 +500,7 @@ impl ReceiverAgent {
                     chunk_size,
                     file_exists: self.instant_upload,
                 };
-                sim.post_control(Endpoint::Client, accept);
+                sim.post_control(self.peer(), accept);
                 if self.instant_upload {
                     // 秒传路径（10 章）：不产生位图，
                     // 完成条件是「既有文件校验通过并原子提交」
@@ -399,6 +509,37 @@ impl ReceiverAgent {
                 }
                 // 首次裁决延后一个周期 —— 接收方不会在会话刚建立、位图还全空时
                 // 就下发「你什么都缺」的裁决（11 章：裁决周期 50ms）
+                sim.schedule(fsp_core::flow::VERDICT_PERIOD_MS, Event::ServerVerdict);
+            }
+            ControlMessage::DownloadAccept {
+                file_hash,
+                session_id,
+                chunk_count,
+                window,
+                udp_port,
+                chunk_size,
+                ..
+            } => {
+                // 下载方向：接收侧（Client）收到 accept 后建立会话并进入常规传输
+                let mut session = Session::new(
+                    *session_id,
+                    "client1",
+                    Direction::Download,
+                    file_hash.clone(),
+                    "sample.bin".to_string(),
+                    self.buffer.len() as u64,
+                    0,
+                    *chunk_size,
+                    *window,
+                    *udp_port,
+                    0,
+                );
+                debug_assert_eq!(session.chunk_count(), *chunk_count, "chunk_count 必须可核算");
+                session.transition(SessionState::Negotiating, SessionView::Receiver).expect("INIT→NEGOTIATING 合法");
+                session.transition(SessionState::Transferring, SessionView::Receiver).expect("NEGOTIATING→TRANSFERRING 合法");
+                self.session = Some(session);
+                self.window = *window;
+                // 接收侧开始周期裁决
                 sim.schedule(fsp_core::flow::VERDICT_PERIOD_MS, Event::ServerVerdict);
             }
             ControlMessage::ResumeSession { session_id } => {
@@ -412,7 +553,7 @@ impl ReceiverAgent {
                     missing_count,
                     udp_port: session.udp_port,
                 };
-                sim.post_control(Endpoint::Client, ack);
+                sim.post_control(self.peer(), ack);
             }
             ControlMessage::MissingChunks { mode: MissingMode::Request, .. } => {
                 self.requests_seen += 1;
@@ -463,15 +604,10 @@ impl ReceiverAgent {
         // 仿真中「既有文件」就是期望内容
         session.transition(SessionState::Commit, SessionView::Receiver).expect("VERIFY→COMMIT 合法");
         session.transition(SessionState::Completed, SessionView::Receiver).expect("COMMIT→COMPLETED 合法");
-        let complete = ControlMessage::UploadComplete {
-            session_id: session.session_id,
-            result: ResultKind::Success,
-            code: None,
-            file_hash: Some(session.file_hash.clone()),
-            asset_id: Some("asset-1".into()),
-        };
+        let complete = Self::complete_for(self.direction, session.session_id, session.file_hash.clone());
+        self.complete_published.push(complete.action());
         self.completed = true;
-        sim.post_control(Endpoint::Client, complete);
+        sim.post_control(self.peer(), complete);
     }
 
     fn complete(&mut self, sim: &mut Sim) {
@@ -486,20 +622,15 @@ impl ReceiverAgent {
                 detail: None,
             };
             session.transition(SessionState::Aborted, SessionView::Receiver).ok();
-            sim.post_control(Endpoint::Client, abort);
+            sim.post_control(self.peer(), abort);
             return;
         }
         session.transition(SessionState::Commit, SessionView::Receiver).expect("VERIFY→COMMIT 合法");
         session.transition(SessionState::Completed, SessionView::Receiver).expect("COMMIT→COMPLETED 合法");
-        let complete = ControlMessage::UploadComplete {
-            session_id: session.session_id,
-            result: ResultKind::Success,
-            code: None,
-            file_hash: Some(session.file_hash.clone()),
-            asset_id: Some("asset-1".into()),
-        };
+        let complete = Self::complete_for(self.direction, session.session_id, session.file_hash.clone());
+        self.complete_published.push(complete.action());
         self.completed = true;
-        sim.post_control(Endpoint::Client, complete);
+        sim.post_control(self.peer(), complete);
     }
 
     /// 周期裁决：下发 `missing_chunks`（`mode=report`）。
@@ -529,7 +660,7 @@ impl ReceiverAgent {
             missing_count: Some(verdict.missing_count),
             chunks: verdict.chunks,
         };
-        sim.post_control(Endpoint::Client, msg);
+        sim.post_control(self.peer(), msg);
     }
 }
 

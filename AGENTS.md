@@ -40,13 +40,16 @@ CI（`.github/workflows/spec-check.yml`）会强制执行第 3、4 步，
 
 ```bash
 cd examples/rust
-cargo test                # 27 个核心单测 + 9 个一致性场景
+cargo test                # 29 个核心单测 + 14 个一致性场景
 cargo run -p fsp-sim      # 跑一遍全部场景并打印观测结果
 ```
 
 - 新增/修改规范中的**规范性**行为时，**必须**同步新增或调整对应场景；
 - 场景的判据写在 `fsp-sim/src/scenarios.rs` 的 `pass` 字段里；
 - 仿真必须**确定性**（带种子的 PRNG）；故障注入只作用于首次出现。
+- `World` 区分**会话方向**：`World::new` 是上传（C→S），`World::new_download` 是下载（S→C）。
+  方向决定角色 —— 上传方向 Client 发送 / Server 接收，下载方向相反；
+  但**无论哪个方向，发起会话的都是 Client，发布完成消息的都是接收侧**。
 
 ## Build, Lint, and Test Commands
 

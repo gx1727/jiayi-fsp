@@ -24,11 +24,16 @@ fn main() {
         println!("规范：{} —— {}", scenario.spec, scenario.description);
 
         let mut world = (scenario.setup)();
-        world.client.start(&mut world.sim);
+        world.begin();
         world.run(scenario.duration_ms);
 
-        let c = &world.client;
-        let s = &world.server;
+        let c = &world.sender;
+        let s = &world.receiver;
+        let dir = match world.direction {
+            fsp_core::message::Direction::Upload => "upload（C→S，接收方 Server）",
+            fsp_core::message::Direction::Download => "download（S→C，接收方 Client）",
+        };
+        println!("  会话方向          {dir}");
         println!("  仿真时刻          {} ms", world.sim.now_ms());
         println!("  发送：数据报 {} 个，完成 = {}", c.datagrams_sent, c.completed);
         println!(
@@ -60,6 +65,8 @@ fn main() {
             "  控制面：投递 {} 条，丢弃 {} 条",
             world.sim.control_delivered, world.sim.control_dropped
         );
+        println!("  接收侧发布完成：{:?}", s.complete_published);
+        println!("  发送侧收到完成：{:?}", c.complete_seen);
         println!("  续传应答：{:?}", c.resume_acks);
         println!("  文件一致：{}", world.content_matches());
 
