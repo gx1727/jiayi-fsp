@@ -4,7 +4,7 @@ import Mermaid from '../ui/Mermaid';
 const ArchitectureDiagram = () => {
   const chart = `
 flowchart TB
-    subgraph App["应用层 (家忆)"]
+    subgraph App["应用层 (加一)"]
         Scanner["文件扫描 / 去重 / 目录策略"]
     end
 

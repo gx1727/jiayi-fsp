@@ -13,7 +13,7 @@ const Header = () => {
     { name: '技术规范', href: '/specification', icon: FileText },
     { name: '应用场景', href: '/scenarios', icon: Monitor },
     { name: '开发者资源', href: '/developers', icon: Code },
-    { name: '家忆', href: 'https://www.16491649.xyz', icon: Heart },
+    { name: '加一', href: 'https://www.16491649.xyz', icon: Heart },
   ];
 
   const isActive = (path: string) => {
@@ -32,7 +32,7 @@ const Header = () => {
               </span>
             </Link>
           </div>
-          
+
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
               {navigation.map((item) => (
